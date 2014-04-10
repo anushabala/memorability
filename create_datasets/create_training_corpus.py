@@ -2,7 +2,7 @@
 #Date: 4/8/14
 
 in_file = file('cornell_movie_quotes_corpus/moviequotes.memorable_nonmemorable_pairs.google_filtered.txt','r')
-out_file = file('data.dat','w')
+out_file = file('../quotes.dat','w')
 mov_set = []
 line = in_file.readline()
 mov_set.append(line)
