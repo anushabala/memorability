@@ -45,8 +45,8 @@ class Train():
         return sent_l
         
     def stopwordremoval(self,lcased):
-        filtered_word_list = lcased[:] #make a copy of the word_list
-        for word in lcased: # iterate over word_list
+        filtered_word_list = lcased[:]         # make a copy of the word_list
+        for word in lcased:                    # iterate over word_list
             if word in stopwords: 
                 filtered_word_list.remove(word) # remove word from filtered_word_list if it is a stopword
         return filtered_word_list
@@ -69,16 +69,37 @@ class Train():
             else:
                 st+='0 '
             tokens=self.preprocess(quote)
-            for token in tokens:
+
+            #Create feature vectors with the unigram features
+            #for token in tokens:
+            #    unigramIndex= self.unigrams.index(token)
+            #    unigramCount= tokens.count(token)
+            #    st+=str(unigramIndex)+':'+str(unigramCount)
+            #    st+=' '
+
+            #Form the feature vector with unigram features and form the bigram tokens
+            bigramTokens= ' '
+            for i in range(0,len(tokens)):
+                token=tokens[i]
                 unigramIndex= self.unigrams.index(token)
                 unigramCount= tokens.count(token)
                 st+=str(unigramIndex)+':'+str(unigramCount)
                 st+=' '
-                
-            for i in range(0,len(tokens)-1):
-                bigram=(tokens[i],tokens[i+1])
-                self.bigrams.append(bigram)
+
+                if i <= len(tokens)-2:
+                    bigram=tokens[i]+'_'+tokens[i+1]
+                    bigramTokens+=' '+bigram
+
+            #Create feature vectors with the bigram features
+            bigramTokens = bigramTokens.split()
+            for token in bigramTokens:
+                bigramIndex= self.unigrams.index(token)
+                bigramCount= bigramTokens.count(token)
+                st+=str(bigramIndex)+':'+str(bigramCount)
+                st+=' '
+
             print st
+
             quotecount+=1
         f.close()
         
@@ -88,10 +109,11 @@ class Train():
             #Store unigrams
             for token in tokens:
                 self.unigrams.append(token)
-            #Store bigrams
+            #Create bigrams separated by '_' and store in the feature list
+            #The bigrams and unigrams feature list is kept same to ease the process fo creating the Feature Vectors
             for i in range(0,len(tokens)-1):
-                bigram=(tokens[i],tokens[i+1])
-                self.bigrams.append(bigram)
+                bigram = tokens[i]+"_"+tokens[i+1]
+                self.unigrams.append(bigram)
 #         
 #     def computeBigramCounts(self):
     
