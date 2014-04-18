@@ -8,7 +8,13 @@ Splits a combined training+validation set into training and validation, dependin
   k - the number of the fold (1-total)
   total - the total number of folds (default 5)
   '''
-def get_kth_split(data, k, total=5):
+def get_kth_split(combined, k, total=5):
+    data=[]
+    combined_corpus = file(combined, 'r')
+    line = combined_corpus.readline()
+    while line:
+        data.append(line)
+        line = combined_file.readline()
     corpus_size = len(data)
     val_size = corpus_size/total
     val_fold = (total-(k-1))
@@ -70,5 +76,5 @@ for line in test:
 
 combined_file.close()
 test_file.close()
-train_set, val_set = get_kth_split(combined, 1, 5)
+# train_set, val_set = get_kth_split(combined, 1, 5)
 
