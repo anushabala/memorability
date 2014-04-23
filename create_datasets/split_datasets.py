@@ -1,5 +1,7 @@
 #Written by: Anusha Balakrishnan
 #Date: 4/10/14
+#Modified y: Rituparna Mukherjee
+#Date: 4/18/14
 import random
 
 '''
@@ -10,23 +12,34 @@ Splits a combined training+validation set into training and validation, dependin
   '''
 def get_kth_split(combined, k, total=5):
     data=[]
+    train_file = 'train%d.dat' % k
+    dev_file = 'dev%d.dat' % k
+    out_file1 = file(train_file,'w')
+    out_file2 = file(dev_file,'w')
     combined_corpus = file(combined, 'r')
     line = combined_corpus.readline()
     while line:
         data.append(line)
-        line = combined_file.readline()
+        line = combined_corpus.readline()
     corpus_size = len(data)
     val_size = corpus_size/total
     val_fold = (total-(k-1))
-    print val_fold
+    #print val_fold
 
     val_start = ((val_fold-1) * val_size) - 1
+    if val_start<0:
+        val_start=0
     val_end = val_start+val_size
 
     val_set = data[val_start: val_end+1]
     train_set = list(set(data)-set(val_set))
 
-    return train_set, val_set
+    for data in train_set:
+        out_file1.write(data)
+    for data in val_set:
+        out_file2.write(data)
+
+    #return train_set, val_set
 
 
 def read_data(data):
@@ -64,10 +77,10 @@ def random_split(lines, train, val, test):
 
     # print combined
 
-lines = read_data('../quotes.dat')
+'''lines = read_data('quotes.dat')
 combined, test = random_split(lines, 0.6, 0.2, 0.2)
-combined_file = file('../combined.dat', 'w')
-test_file = file('../test.dat', 'w')
+combined_file = file('combined.dat', 'w')
+test_file = file('test.dat', 'w')
 for line in combined:
     combined_file.write(line+'\n')
 
@@ -76,5 +89,7 @@ for line in test:
 
 combined_file.close()
 test_file.close()
+'''
 # train_set, val_set = get_kth_split(combined, 1, 5)
-
+for i in range(1,6):
+    get_kth_split("combined.dat", i, 5)
