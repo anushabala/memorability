@@ -1,0 +1,2 @@
+Percent of memorable quotes profane: 0.331285 (593 of 1790)
+Percent of non-memorable quotes profane: 0.194413 (348 of 1790)
