@@ -11,10 +11,11 @@ class Train():
         self.featureList=['Unigram','Bigram']
         self.unigrams=[]
         self.bigrams=[]
-        self.trainfile = 'create_datasets/quotes.dat'
-        self.trainparsed = 'quotes.dat'
-        self.testfile    = 'test.txt'
-        self.testparsed  = 'test.dat'
+        self.trainfile =  'create_datasets/fv_train'
+        self.trainparsed = 'create_datasets/train'#'quotes.dat'
+        self.testfile    = 'create_datasets/fv_dev'
+        self.testparsed  = 'create_datasets/dev'
+        self.lastIndex =  0
         
     #def readfile(self,filename, outputfile):
     #    ctc.getMovieCorpusContents(filename,outputfile)
@@ -63,61 +64,85 @@ class Train():
         ftokens=self.stem(stpwremoved)
         return ftokens        
         
-    def buildFeatureFile(self, filename):
-        f=open(filename,'w')
-        quotecount=0
-        for line in self.lines:
-            st=''
-            quote=line.strip().split('\t')[0]
-            if(line.strip().split('\t')[1]=='M'):
-                st+='1 '
-            else:
-                st+='0 '
-            tokens=self.preprocess(quote)
+    def buildFeatureFile(self, filename, path, fold):
+        feature_file = path+str(fold)+".dat"
+        with open(feature_file, 'w') as fw:
+            f=open(filename,'r')
+            quotecount=0
+            for line in self.lines:
+                st=''
+                quote=line.strip().split('\t')[0]
+                if(line.strip().split('\t')[1]=='M'):
+                    #st+='1 '
+                    st+='1'
+                else:
+                    #st+='0 '
+                    st+='0'
+                tokens=self.preprocess(quote)
 
-            #Create feature vectors with the unigram features
-            #for token in tokens:
-            #    unigramIndex= self.unigrams.index(token)
-            #    unigramCount= tokens.count(token)
-            #    st+=str(unigramIndex)+':'+str(unigramCount)
-            #    st+=' '
+                #Create feature vectors with the unigram features
+                #for token in tokens:
+                #    unigramIndex= self.unigrams.index(token)
+                #    unigramCount= tokens.count(token)
+                #    st+=str(unigramIndex)+':'+str(unigramCount)
+                #    st+=' '
 
-            #Form the feature vector with unigram, bigram, trigram tokens
-            bigramTokens= ' '
-            trigramTokens= ' '
-            for i in range(0,len(tokens)):
-                token=tokens[i]
-                unigramIndex= self.unigrams.index(token)
-                unigramCount= tokens.count(token)
-                st+=str(unigramIndex)+':'+str(unigramCount)
-                st+=' '
-                if i <= len(tokens)-2:
-                    bigram=tokens[i]+'_'+tokens[i+1]
-                    bigramTokens+=' '+bigram
-                    if i<= len(tokens)-3:
-                        trigram=tokens[i]+'_'+tokens[i+1]+'_'+tokens[i+2]
-                        trigramTokens+=' '+trigram
+                #Length of quotes
+                qoute_len = len(tokens)
 
-            #Create feature vectors with the bigram features
-            bigramTokens = bigramTokens.split()
-            for token in bigramTokens:
-                bigramIndex= self.unigrams.index(token)
-                bigramCount= bigramTokens.count(token)
-                st+=str(bigramIndex)+':'+str(bigramCount)
-                st+=' '
+                #Form the feature vector with unigram, bigram, trigram tokens
+                bigramTokens= ' '
+                trigramTokens= ' '
+                fv = {}
+                for i in range(0,len(tokens)):
+                    token=tokens[i]
+                    if (token in self.unigrams):
+                        unigramIndex= self.unigrams.index(token)+1
+                        unigramCount= tokens.count(token)
+                        fv.update({unigramIndex:unigramCount})
+                        #st+=str(unigramIndex)+':'+str(unigramCount)
+                        #st+=' '
+                    if i <= len(tokens)-2:
+                        bigram=tokens[i]+'_'+tokens[i+1]
+                        bigramTokens+=' '+bigram
+                        if i<= len(tokens)-3:
+                            trigram=tokens[i]+'_'+tokens[i+1]+'_'+tokens[i+2]
+                            trigramTokens+=' '+trigram
 
-            #Create feature vectors with the trigram features
-            trigramTokens = trigramTokens.split()
-            for token in trigramTokens:
-                trigramIndex= self.unigrams.index(token)
-                trigramCount= trigramTokens.count(token)
-                st+=str(trigramIndex)+':'+str(trigramCount)
-                st+=' '
+                #Create feature vectors with the bigram features
+                bigramTokens = bigramTokens.split()
+                for token in bigramTokens:
+                    if(token in self.unigrams):
+                        bigramIndex= self.unigrams.index(token)+1
+                        bigramCount= bigramTokens.count(token)
+                        fv.update({bigramIndex:bigramCount})
+                        #st+=str(bigramIndex)+':'+str(bigramCount)
+                        #st+=' '
 
-            print st
+                #Create feature vectors with the trigram features
+                trigramTokens = trigramTokens.split()
+                for token in trigramTokens:
+                    if(token in self.unigrams):
+                        trigramIndex= self.unigrams.index(token)+1
+                        trigramCount= trigramTokens.count(token)
+                        fv.update({trigramIndex:trigramCount})
+                        #st+=str(trigramIndex)+':'+str(trigramCount)
+                        #st+=' '
 
-            quotecount+=1
-        f.close()
+                #Length of the quote
+                fv.update({self.lastIndex:qoute_len})
+
+                #print st
+                #Sort the features by index
+                for key in sorted(fv):
+                    st+=' '+str(key)+":"+str(fv[key])
+
+                #Write the feature vector to te file
+                fw.write(st+"\n")
+
+                quotecount+=1
+            f.close()
+        fw.close()
         
     def buildFeatureDictionaries(self):
         for line in self.lines:
@@ -133,15 +158,22 @@ class Train():
                 if (i < len(tokens) - 2):
                     trigram = tokens[i]+'_'+tokens[i+1]+'_'+tokens[i+2]
                     self.unigrams.append(trigram)
+        self.lastIndex = len(self.unigrams)+1
 
-#         
+
 #     def computeBigramCounts(self):
     
+    #Reading the training file and creating the feature vector for that
+    #train.readfile(train.trainfile,train.trainparsed)
 
-train=Train()
-#Reading the training file and creating the feature vector for that
-#train.readfile(train.trainfile,train.trainparsed)
-train.buildQuoteDictionaries(train.trainparsed)
-train.buildFeatureDictionaries()
-train.buildFeatureFile(train.trainfile)
+for fold in range(1,6):
+    train=Train()
+    train_file = train.trainparsed+str(fold)+".dat"
+    train.buildQuoteDictionaries(train_file)
+    train.buildFeatureDictionaries()
+    train.buildFeatureFile(train_file, train.trainfile, fold)#(train.trainfile)
+
+    test_file = train.testparsed+str(fold)+".dat"
+    train.buildQuoteDictionaries(test_file)
+    train.buildFeatureFile(test_file, train.testfile, fold )
 
