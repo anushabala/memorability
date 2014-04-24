@@ -1,2 +1,5 @@
 Percent of memorable quotes profane: 0.331285 (593 of 1790)
 Percent of non-memorable quotes profane: 0.194413 (348 of 1790)
+
+Percentage of pairs where the memorable quote is more profane than the non-memorable quote: 0.331285
+Percentage of pairs where the non-memorable quote is more profane than the memorable quote: 0.000000

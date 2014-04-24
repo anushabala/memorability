@@ -76,21 +76,20 @@ class ProfanityChecker:
         return False
 
     def get_profanity_freq(self, quote):
-        if not self.is_quote_profane(quote):
-            return 0.0
-        else:
-            freq = 0
-            total_tokens = 0
-            sentences = self.sent_detector.tokenize(quote.strip())
-            for sentence in sentences:
-                tokens = nltk.word_tokenize(sentence)
-                for word in tokens:
-                    if word not in string.punctuation:
-                        total_tokens+=1
-                        stem = self.stemmer.stem(word)
-                        if word in self.profane_set or stem in self.profane_set:
-                            freq+=1
-            return freq
+        freq = 0
+        total_tokens = 0
+        sentences = self.sent_detector.tokenize(quote.strip())
+        for sentence in sentences:
+            tokens = nltk.word_tokenize(sentence)
+            for word in tokens:
+                if word not in string.punctuation:
+                    total_tokens+=1
+                    stem = self.stemmer.stem(word)
+                    if word in self.profane_set or stem in self.profane_set:
+                        freq+=1
+        if total_tokens==0:
+            total_tokens=1
+        return (freq, total_tokens)
 
 
 def find_corpus_profanities(corpus_file, rejected):
@@ -153,7 +152,42 @@ def find_corpus_colloquialisms(corpus_file, rejected):
     corpus.close()
     not_profane.close()
 
+def compare_corpus_profanity(corpus_file):
+    profanity_filter = ProfanityChecker()
+    corpus = file(corpus_file,'r')
+    line = corpus.readline()
+    mem_pairs = 0
+    more_pairs = 0
+    nonmem_pairs = 0
+    total = 0
+    while line:
+        line = line.strip().split('\t')
+        mem_quote = line[0].strip()
+        line = corpus.readline()
+        nonmem_quote = line[0].strip()
+        (mem_freq, mem_tokens) = profanity_filter.get_profanity_freq(mem_quote)
+        (nonmem_freq, nonmem_tokens) = profanity_filter.get_profanity_freq(nonmem_quote)
+        mem_norm = float(mem_freq)/mem_tokens
+        nonmem_norm = float(nonmem_freq)/nonmem_tokens
+        total+=1
+        if mem_norm > nonmem_norm:
+            mem_pairs += 1
+        elif nonmem_norm > mem_norm:
+            nonmem_pairs += 1
+        if profanity_filter.is_quote_profane(mem_quote) and not profanity_filter.is_quote_profane(nonmem_quote):
+            more_pairs +=1
+        if total%500==0:
+            print "%d pairs processed." % total
+
+        line = corpus.readline()
+    print "Percentage of pairs where the memorable quote is " \
+          "more profane than the non-memorable quote: %f" % (float(mem_pairs)/total)
+    print "Percentage of pairs where the non-memorable quote is " \
+          "more profane than the memorable quote: %f" % (float(nonmem_pairs)/total)
+    print "Percentage of pairs where the memorable quote is " \
+          "profane and the memorable quote isn't: %f" % (float(more_pairs)/total)
 corpus = '../quotes.dat'
 rejected = 'rejected_colloquial.dat'
 # find_corpus_colloquialisms(corpus, rejected)
-find_corpus_profanities(corpus, None)
+# find_corpus_profanities(corpus, None)
+compare_corpus_profanity(corpus)
