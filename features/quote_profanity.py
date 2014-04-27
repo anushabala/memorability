@@ -32,23 +32,25 @@ class ProfanityChecker:
         if os.path.isfile(self.SLANG_FILE_PATH):
             self.slang_set = pickle.load(file(self.SLANG_FILE_PATH, 'rb'))
         else:
-            self.__get_all_slang()
+            pass
+            # function to get all slang from internet
+            # self.__get_all_slang()
 
-    def __get_all_slang(self):
-
-        for i in range(1,20):
-            url = "http://www.manythings.org/slang/slang%d.html" % i
-            page = urllib2.urlopen(url)
-            soup = BeautifulSoup(page.read())
-            words = soup.findAll('b')
-            for eachword in words:
-                contents = eachword.contents
-                if len(contents)!=0:
-                    word = contents[0].strip()
-                    if ' ' not in word:
-                        self.slang_set.add(word)
-                        self.slang_set.add(self.stemmer.stem(word))
-        pickle.dump(self.slang_set, file(self.SLANG_FILE_PATH, 'wb'))
+    # def __get_all_slang(self):
+    #
+    #     for i in range(1,20):
+    #         url = "http://www.manythings.org/slang/slang%d.html" % i
+    #         page = urllib2.urlopen(url)
+    #         soup = BeautifulSoup(page.read())
+    #         words = soup.findAll('b')
+    #         for eachword in words:
+    #             contents = eachword.contents
+    #             if len(contents)!=0:
+    #                 word = contents[0].strip()
+    #                 if ' ' not in word:
+    #                     self.slang_set.add(word)
+    #                     self.slang_set.add(self.stemmer.stem(word))
+    #     pickle.dump(self.slang_set, file(self.SLANG_FILE_PATH, 'wb'))
 
     def is_quote_profane(self, quote):
 
