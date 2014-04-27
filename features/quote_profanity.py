@@ -9,9 +9,9 @@ from nltk.stem.snowball import SnowballStemmer
 from bs4 import BeautifulSoup
 
 class ProfanityChecker:
-    def __init__(self):
-        self.PROFANE_FILE_PATH = 'profane_words.pkl'
-        self.SLANG_FILE_PATH = 'slang_words.pkl'
+    def __init__(self, relative_path= "./"):
+        self.PROFANE_FILE_PATH = '%sprofane_words.pkl' % relative_path
+        self.SLANG_FILE_PATH = '%sslang_words.pkl' % relative_path
         self.slang_set = set()
         self.profane_set = set()
         self.stemmer = SnowballStemmer("english")
@@ -19,7 +19,7 @@ class ProfanityChecker:
         if os.path.isfile(self.PROFANE_FILE_PATH):
             self.profane_set = pickle.load(file(self.PROFANE_FILE_PATH, 'rb'))
         else:
-            profane_file = file('profanity.txt', 'r')
+            profane_file = file('%sprofanity.txt' % relative_path, 'r')
             line = profane_file.readline()
             while line:
                 self.profane_set.add(line.strip())
@@ -91,6 +91,9 @@ class ProfanityChecker:
             total_tokens=1
         return (freq, total_tokens)
 
+    def get_normalized_profanity(self, quote):
+        (freq, tokens) = self.get_profanity_freq(quote)
+        return float(freq)/tokens
 
 def find_corpus_profanities(corpus_file, rejected):
     profanity_filter = ProfanityChecker()
@@ -186,8 +189,8 @@ def compare_corpus_profanity(corpus_file):
           "more profane than the memorable quote: %f" % (float(nonmem_pairs)/total)
     print "Percentage of pairs where the memorable quote is " \
           "profane and the memorable quote isn't: %f" % (float(more_pairs)/total)
-corpus = '../quotes.dat'
-rejected = 'rejected_colloquial.dat'
+# corpus = '../quotes.dat'
+# rejected = 'rejected_colloquial.dat'
 # find_corpus_colloquialisms(corpus, rejected)
 # find_corpus_profanities(corpus, None)
-compare_corpus_profanity(corpus)
+# compare_corpus_profanity(corpus)
