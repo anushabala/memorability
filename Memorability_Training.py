@@ -1,7 +1,8 @@
-import create_training_corpus as ctc
-import pprint
+# import create_training_corpus as ctc
 from nltk.stem.porter import *
 from nltk.tokenize import word_tokenize, wordpunct_tokenize, sent_tokenize
+from quote_profanity import ProfanityChecker
+
 stopwords = ['a', 'able', 'about', 'across', 'after', 'all', 'almost', 'also', 'am', 'among', 'an', 'and', 'any', 'are', 'as', 'at', 'be', 'because', 'been', 'but', 'by', 'can', 'cannot', 'could', 'dear', 'did', 'do', 'does', 'either', 'else', 'ever', 'every', 'for', 'from', 'get', 'got', 'had', 'has', 'have', 'he', 'her', 'hers', 'him', 'his', 'how', 'however', 'i', 'if', 'in', 'into', 'is', 'it', 'its', 'just', 'least', 'let', 'like', 'likely', 'may', 'me', 'might', 'most', 'must', 'my', 'neither', 'no', 'nor', 'not', 'of', 'off', 'often', 'on', 'only', 'or', 'other', 'our', 'own', 'rather', 'said', 'say', 'says', 'she', 'should', 'since', 'so', 'some', 'than', 'that', 'the', 'their', 'them', 'then', 'there', 'these', 'they', 'this', 'tis', 'to', 'too', 'twas', 'us', 'wants', 'was', 'we', 'were', 'what', 'when', 'where', 'which', 'while', 'who', 'whom', 'why', 'will', 'with', 'would', 'yet', 'your']
 
 class Train():
@@ -148,24 +149,33 @@ class Train():
         return len(self.unigrams)
 
     def add_extra_features(self, fv,tokens):
+        self.lastIndex+=1
         #Length Feature of the quote
-        qoute_len = len(tokens)
-        self.lastIndex+=1
-        fv.update({self.lastIndex:qoute_len})
+        quote_len = len(tokens)
+        fv.update({self.lastIndex:quote_len})
 
-        #Check for presence of 'you' in the quotes
         self.lastIndex+=1
+        #Check for presence of 'you' in the quotes
         if (tokens.count("you") > 0):
             value = 1
         else:
             value =0
         fv.update({self.lastIndex:value})
+
+        self.lastIndex+=1
+        #Get frequency of profane words normalized by number of tokens
+        checker = ProfanityChecker()
+        norm_freq = checker.get_normalized_profanity(" ".join(tokens))
+        fv.update({self.lastIndex:norm_freq})
+
+        # how to add emotion strength???
         return fv
 
 #     def computeBigramCounts(self):
     
     #Reading the training file and creating the feature vector for that
     #train.readfile(train.trainfile,train.trainparsed)
+
 
 for fold in range(1,6):
     train=Train()
@@ -177,4 +187,3 @@ for fold in range(1,6):
     test_file = train.testparsed+str(fold)+".dat"
     train.buildQuoteDictionaries(test_file)
     train.buildFeatureFile(test_file, train.testfile, fold )
-
