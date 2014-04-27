@@ -1,13 +1,11 @@
-<<<<<<< HEAD
 import create_training_corpus as ctc
 import pprint
+import sys
 import nltk
-=======
-# import create_training_corpus as ctc
->>>>>>> 2e72b9ddecdb2cf84473cd8e3826f207e3795cb5
 from nltk.stem.porter import *
 from nltk.tokenize import word_tokenize, wordpunct_tokenize, sent_tokenize
-from quote_profanity import ProfanityChecker
+sys.path.insert(0, './features')
+import quote_profanity
 
 stopwords = ['a', 'able', 'about', 'across', 'after', 'all', 'almost', 'also', 'am', 'among', 'an', 'and', 'any', 'are', 'as', 'at', 'be', 'because', 'been', 'but', 'by', 'can', 'cannot', 'could', 'dear', 'did', 'do', 'does', 'either', 'else', 'ever', 'every', 'for', 'from', 'get', 'got', 'had', 'has', 'have', 'he', 'her', 'hers', 'him', 'his', 'how', 'however', 'i', 'if', 'in', 'into', 'is', 'it', 'its', 'just', 'least', 'let', 'like', 'likely', 'may', 'me', 'might', 'most', 'must', 'my', 'neither', 'no', 'nor', 'not', 'of', 'off', 'often', 'on', 'only', 'or', 'other', 'our', 'own', 'rather', 'said', 'say', 'says', 'she', 'should', 'since', 'so', 'some', 'than', 'that', 'the', 'their', 'them', 'then', 'there', 'these', 'they', 'this', 'tis', 'to', 'too', 'twas', 'us', 'wants', 'was', 'we', 'were', 'what', 'when', 'where', 'which', 'while', 'who', 'whom', 'why', 'will', 'with', 'would', 'yet', 'your']
 
@@ -22,11 +20,7 @@ class Train():
         self.trainparsed = 'create_datasets/train'#'quotes.dat'
         self.testfile    = 'create_datasets/fv_dev'
         self.testparsed  = 'create_datasets/dev'
-        self.lastIndex   =0
-
-    #def readfile(self,filename, outputfile):
-    #    ctc.getMovieCorpusContents(filename,outputfile)
-
+        self.lastIndex   = 0
     
     def buildQuoteDictionaries(self, filename):
         datafile=open(filename)#('data.dat')
@@ -132,6 +126,29 @@ class Train():
                         trigramCount= trigramTokens.count(token)
                         fv.update({trigramIndex:trigramCount})
 
+                print 'LEXICAL done'
+                #Edits by Ashima Arora: Adding the syntactic ngrams.
+                #Syntax Unigrams
+                POStags = [x for (x,y) in nltk.pos_tag(tokens)]
+                for POStag in POStags:
+                    unigramIndex= self.unigrams.index(POStag)+1
+                    unigramCount= POStags.count(POStag)
+                    fv.update({unigramIndex:unigramCount})                  
+                #Syntax Bigrams
+                SyntaxBigramList = [POStags[i]+'_'+POStags[i+1] for i in range(0,len(POStags)-1)]
+                for syntaxbigram in SyntaxBigramList:
+                    unigramIndex= self.unigrams.index(syntaxbigram)+1
+                    unigramCount= SyntaxBigramList.count(syntaxbigram)
+                    fv.update({unigramIndex:unigramCount})                   
+                
+                #Syntax Trigrams
+                SyntaxTrigramList = [POStags[i]+'_'+POStags[i+1]+'_'+POStags[i+2] for i in range(0,len(POStags)-2)]
+                for syntaxtrigram in SyntaxTrigramList:
+                    unigramIndex= self.unigrams.index(syntaxtrigram)+1
+                    unigramCount= SyntaxTrigramList.count(syntaxtrigram)
+                    fv.update({unigramIndex:unigramCount})                   
+
+                print 'SYNTACTIC done'
                 #Sort the features by index
                 for key in sorted(fv):
                     st+=' '+str(key)+":"+str(fv[key])
@@ -157,8 +174,7 @@ class Train():
                 if (i < len(tokens) - 2):
                     trigram = tokens[i]+'_'+tokens[i+1]+'_'+tokens[i+2]
                     self.unigrams.append(trigram)
-<<<<<<< HEAD
-
+            
             #Edits by Ashima Arora: Adding the syntactic ngrams.
             #Syntax Unigrams
             for word_tag in nltk.pos_tag(tokens):
@@ -166,16 +182,14 @@ class Train():
                 self.unigrams.append(tag)
             #Syntax Bigrams
             for i in range(0,len(tokens)-1):
-                syntaxBigram = nltk.pos_tag(tokens[i])[1]+"_"+nltk.pos_tag(tokens[i+1])[1]
+                syntaxBigram = nltk.pos_tag(tokens[i])[0][1]+"_"+nltk.pos_tag(tokens[i+1])[0][1]
                 self.unigrams.append(syntaxBigram)
             #Syntax trigrams
             for i in range(0,len(tokens)-2):
-                syntaxTrigram = nltk.pos_tag(tokens[i])[1]+"_"+nltk.pos_tag(tokens[i+1])[1]+"_"+nltk.pos_tag(tokens[i+2])[1]
+                syntaxTrigram = nltk.pos_tag(tokens[i])[0][1]+"_"+nltk.pos_tag(tokens[i+1])[0][1]+"_"+nltk.pos_tag(tokens[i+2])[0][1]
                 self.unigrams.append(syntaxTrigram)
                 
         self.lastIndex = len(self.unigrams)+1
-=======
->>>>>>> 2e72b9ddecdb2cf84473cd8e3826f207e3795cb5
 
     def getLastIndex(self):
         return len(self.unigrams)
@@ -208,26 +222,16 @@ class Train():
     #Reading the training file and creating the feature vector for that
     #train.readfile(train.trainfile,train.trainparsed)
 
-<<<<<<< HEAD
-for fold in range(1,1):
-=======
-
-for fold in range(1,6):
->>>>>>> 2e72b9ddecdb2cf84473cd8e3826f207e3795cb5
+for fold in range(1,2):
     train=Train()
+    print 'Object made.'
     train_file = train.trainparsed+str(fold)+".dat"
     train.buildQuoteDictionaries(train_file)
+    print 'Built quote dictionaries..'
     train.buildFeatureDictionaries()
-<<<<<<< HEAD
-    # train.buildFeatureFile(train_file, train.trainfile, fold)#(train.trainfile)
-
-    # test_file = train.testparsed+str(fold)+".dat"
-    # train.buildQuoteDictionaries(test_file)
-    # train.buildFeatureFile(test_file, train.testfile, fold )
-=======
+    print 'Feature Dictionary built!'
     train.buildFeatureFile(train_file, train.trainfile, fold)#(train.trainfile)
 
     test_file = train.testparsed+str(fold)+".dat"
     train.buildQuoteDictionaries(test_file)
     train.buildFeatureFile(test_file, train.testfile, fold )
->>>>>>> 2e72b9ddecdb2cf84473cd8e3826f207e3795cb5
