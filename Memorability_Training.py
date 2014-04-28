@@ -1,9 +1,11 @@
-import create_training_corpus as ctc
+import create_datasets.create_training_corpus as ctc
 import pprint
 import sys
 import nltk
 from nltk.stem.porter import *
 from nltk.tokenize import word_tokenize, wordpunct_tokenize, sent_tokenize
+from distinctness import BrownLanguageModel
+
 sys.path.insert(0, './features')
 import quote_profanity
 
@@ -92,7 +94,7 @@ class Train():
                 fv = {}
                 self.lastIndex = 0
                 self.lastIndex= self.getLastIndex()
-                fv = self.add_extra_features(fv, tokens)
+                fv = self.add_extra_features(fv, tokens, quote)
 
                 #Form the feature vector with unigram, bigram, trigram tokens
                 bigramTokens= ' '
@@ -131,22 +133,25 @@ class Train():
                 #Syntax Unigrams
                 POStags = [x for (x,y) in nltk.pos_tag(tokens)]
                 for POStag in POStags:
-                    unigramIndex= self.unigrams.index(POStag)+1
-                    unigramCount= POStags.count(POStag)
-                    fv.update({unigramIndex:unigramCount})                  
+                    if(POStag in self.unigrams):
+                        unigramIndex= self.unigrams.index(POStag)+1
+                        unigramCount= POStags.count(POStag)
+                        fv.update({unigramIndex:unigramCount})
                 #Syntax Bigrams
                 SyntaxBigramList = [POStags[i]+'_'+POStags[i+1] for i in range(0,len(POStags)-1)]
                 for syntaxbigram in SyntaxBigramList:
-                    unigramIndex= self.unigrams.index(syntaxbigram)+1
-                    unigramCount= SyntaxBigramList.count(syntaxbigram)
-                    fv.update({unigramIndex:unigramCount})                   
+                    if (syntaxbigram in self.unigrams):
+                        unigramIndex= self.unigrams.index(syntaxbigram)+1
+                        unigramCount= SyntaxBigramList.count(syntaxbigram)
+                        fv.update({unigramIndex:unigramCount})
                 
                 #Syntax Trigrams
                 SyntaxTrigramList = [POStags[i]+'_'+POStags[i+1]+'_'+POStags[i+2] for i in range(0,len(POStags)-2)]
                 for syntaxtrigram in SyntaxTrigramList:
-                    unigramIndex= self.unigrams.index(syntaxtrigram)+1
-                    unigramCount= SyntaxTrigramList.count(syntaxtrigram)
-                    fv.update({unigramIndex:unigramCount})                   
+                    if (syntaxtrigram in self.unigrams):
+                        unigramIndex= self.unigrams.index(syntaxtrigram)+1
+                        unigramCount= SyntaxTrigramList.count(syntaxtrigram)
+                        fv.update({unigramIndex:unigramCount})
 
                 print 'SYNTACTIC done'
                 #Sort the features by index
@@ -188,13 +193,13 @@ class Train():
             for i in range(0,len(tokens)-2):
                 syntaxTrigram = nltk.pos_tag(tokens[i])[0][1]+"_"+nltk.pos_tag(tokens[i+1])[0][1]+"_"+nltk.pos_tag(tokens[i+2])[0][1]
                 self.unigrams.append(syntaxTrigram)
-                
+
         self.lastIndex = len(self.unigrams)+1
 
     def getLastIndex(self):
         return len(self.unigrams)
 
-    def add_extra_features(self, fv,tokens):
+    def add_extra_features(self, fv,tokens, quote=None):
         self.lastIndex+=1
         #Length Feature of the quote
         quote_len = len(tokens)
@@ -210,11 +215,33 @@ class Train():
 
         self.lastIndex+=1
         #Get frequency of profane words normalized by number of tokens
-        checker = ProfanityChecker()
+        checker = quote_profanity.ProfanityChecker("features/")
         norm_freq = checker.get_normalized_profanity(" ".join(tokens))
         fv.update({self.lastIndex:norm_freq})
 
-        # how to add emotion strength???
+        # todo: emotion strength!
+        #Get TF-IDF scores for lexical and syntactic N-grams
+        ngrams = 3
+        LM = BrownLanguageModel()
+        LM.load_doc_freqs()
+        # TF-IDF scores for lexical N-grams
+        mode = "lex"
+        scores = [0,0,0]
+        for i in range(0, ngrams):
+             scores[i] = LM.get_tf_idf_score(quote, mode=mode, ngram=i+1)
+        # get all possible combinations of lexical TF-IDF scores
+        combined_scores = [].extend(scores)
+        for i in range(0, ngrams):
+            for j in range(i+1, ngrams):
+                pair_sum = scores[i] + scores[j]
+                combined_scores.append(pair_sum)
+                if(j+1 < ngrams):
+                    triple_sum = pair_sum + scores[j+1]
+                    combined_scores.append(triple_sum)
+        for score in combined_scores:
+            self.lastIndex+=1
+            fv.update({self.lastIndex:score})
+
         return fv
 
 #     def computeBigramCounts(self):
