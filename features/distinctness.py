@@ -27,10 +27,10 @@ class BrownLanguageModel:
                         or to paths as specified by the pos_path and lex_path parameters.
         """
 
-        self.LEX_IDFS = 'ngram_lex_idfs.pkl'
-        self.POS_IDFS = 'ngram_pos_idfs.pkl'
-        self.POS_NGRAMS = 'pos_ngrams.pkl'
-        self.LEX_NGRAMS = 'lex_ngrams.pkl'
+        self.LEX_IDFS = '%sngram_lex_idfs.pkl' % rel
+        self.POS_IDFS = '%sngram_pos_idfs.pkl' % rel
+        self.POS_NGRAMS = '%spos_ngrams.pkl' % rel
+        self.LEX_NGRAMS = '%slex_ngrams.pkl' % rel
         self.ngram_pos_count = defaultdict(int)
         self.ngram_lex_count = defaultdict(int)
         self.document_freqs_pos = defaultdict(int)
@@ -383,7 +383,7 @@ def compare_test_distinctiveness(path):
     print "Average %d-gram %s TF-IDF score for memorable slogans: %f" % (ngram, appendstr, float(dist['M'])/total['M'])
     print "Average %d-gram %s TF-IDF score for non-memorable slogans: %f" % (ngram, appendstr, float(dist['N'])/total['N'])
 # compare_total_distinctiveness_pairwise()
-compare_test_distinctiveness('../Memfiles/Advertising.dat')
+# compare_test_distinctiveness('../Memfiles/Advertising.dat')
 # LM = BrownLanguageModel(rebuild=True)
 # LM.load_doc_freqs(rebuild=True)
 
