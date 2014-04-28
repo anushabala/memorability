@@ -1,0 +1,25 @@
+Percentage of pairs where memorable quote is syntactically more distinct (1-grams): 0.582682
+Percentage of pairs where non-memorable quote is syntactically more distinct (1-grams): 0.417318
+
+Percentage of pairs where memorable quote is syntactically more distinct (2-grams): 0.565753
+Percentage of pairs where non-memorable quote is syntactically more distinct (2-grams): 0.434247
+
+Percentage of pairs where memorable quote is syntactically more distinct (3-grams): 0.501235
+Percentage of pairs where non-memorable quote is syntactically more distinct (3-grams): 0.498765
+
+Percentage of pairs where memorable quote is syntactically more distinct (1-grams): 0.459127
+Percentage of pairs where non-memorable quote is syntactically more distinct (1-grams): 0.540873
+
+Percentage of pairs where memorable quote is syntactically more distinct (2-grams): 0.453579
+Percentage of pairs where non-memorable quote is syntactically more distinct (2-grams): 0.546421
+
+Percentage of pairs where memorable quote is syntactically more distinct (3-grams): 0.460850
+Percentage of pairs where non-memorable quote is syntactically more distinct (3-grams): 0.539150
+
+Percentage of pairs where memorable quote is syntactically more distinct (combined): 0.451902
+Percentage of pairs where non-memorable quote is syntactically more distinct (combined): 0.548098
+
+Percentage of pairs where memorable quote is lexically more distinct (combined): 0.570391
+Percentage of pairs where non-memorable quote is lexically more distinct (combined): 0.429609
+
+
