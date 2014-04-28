@@ -387,4 +387,3 @@ def compare_test_distinctiveness(path):
 # LM = BrownLanguageModel(rebuild=True)
 # LM.load_doc_freqs(rebuild=True)
 
-# todo: create brand new test data files that aren't corrupted
