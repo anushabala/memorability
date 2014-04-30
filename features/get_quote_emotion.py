@@ -104,7 +104,7 @@ class SentimentAnalyzer:
         #     return -1
         # else:
         #     return 0
-    def get_quote_polarity(self, quote):
+    def __get_quote_polarity(self, quote):
         response = self.call_sentiment_analysis_api(quote)
         if response==None:
             return -9
@@ -242,6 +242,6 @@ def compare_quote_strengths(corpus_polarities, sentAnalyzer=None):
 
 
 # test_corpus_polarity()
-sentAnalyzer = SentimentAnalyzer()
-sentAnalyzer.load_emotion_mappings()
-compare_quote_strengths('corpus_polarities.pkl', sentAnalyzer=sentAnalyzer)
+# sentAnalyzer = SentimentAnalyzer()
+# sentAnalyzer.load_emotion_mappings()
+# compare_quote_strengths('corpus_polarities.pkl', sentAnalyzer=sentAnalyzer)
