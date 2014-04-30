@@ -1,3 +1,4 @@
+from collections import defaultdict
 import sys
 import nltk
 from nltk.stem.porter import *
@@ -18,6 +19,7 @@ class Train():
         self.nonmemQuotes={}
         self.featureList=['Unigram','Bigram']
         self.unigrams=[]    #Common list for all features.
+        self.current_features = defaultdict(int)
         self.trainfile =  'create_datasets/fv_train'
         self.trainparsed = 'create_datasets/train'#'quotes.dat'
         self.testfile    = 'create_datasets/fv_dev'
@@ -80,6 +82,7 @@ class Train():
             f=open(filename,'r')
             quotecount=0
             for line in self.lines:
+                print line
                 st=''
                 quote=line.strip().split('\t')[0]
                 if(line.strip().split('\t')[1]=='M'):
@@ -100,7 +103,7 @@ class Train():
                 trigramTokens= ' '
                 for i in range(0,len(tokens)):
                     token=tokens[i]
-                    if (token in self.unigrams):
+                    if self.current_features[token]==1:
                         unigramIndex= self.unigrams.index(token)+1
                         unigramCount= tokens.count(token)
                         fv.update({unigramIndex:unigramCount})
@@ -114,7 +117,7 @@ class Train():
                 #Create feature vectors with the bigram features
                 bigramTokens = bigramTokens.split()
                 for token in bigramTokens:
-                    if(token in self.unigrams):
+                    if self.current_features[token]==1:
                         bigramIndex= self.unigrams.index(token)+1
                         bigramCount= bigramTokens.count(token)
                         fv.update({bigramIndex:bigramCount})
@@ -122,7 +125,7 @@ class Train():
                 #Create feature vectors with the trigram features
                 trigramTokens = trigramTokens.split()
                 for token in trigramTokens:
-                    if(token in self.unigrams):
+                    if self.current_features[token]==1:
                         trigramIndex= self.unigrams.index(token)+1
                         trigramCount= trigramTokens.count(token)
                         fv.update({trigramIndex:trigramCount})
@@ -131,14 +134,14 @@ class Train():
                 #Syntax Unigrams
                 POStags = [x for (x,y) in nltk.pos_tag(tokens)]
                 for POStag in POStags:
-                    if(POStag in self.unigrams):
+                    if self.current_features[POStag]==1:
                         unigramIndex= self.unigrams.index(POStag)+1
                         unigramCount= POStags.count(POStag)
                         fv.update({unigramIndex:unigramCount})
                 #Syntax Bigrams
                 SyntaxBigramList = [POStags[i]+'_'+POStags[i+1] for i in range(0,len(POStags)-1)]
                 for syntaxbigram in SyntaxBigramList:
-                    if (syntaxbigram in self.unigrams):
+                    if self.current_features[syntaxbigram]==1:
                         unigramIndex= self.unigrams.index(syntaxbigram)+1
                         unigramCount= SyntaxBigramList.count(syntaxbigram)
                         fv.update({unigramIndex:unigramCount})
@@ -146,7 +149,7 @@ class Train():
                 #Syntax Trigrams
                 SyntaxTrigramList = [POStags[i]+'_'+POStags[i+1]+'_'+POStags[i+2] for i in range(0,len(POStags)-2)]
                 for syntaxtrigram in SyntaxTrigramList:
-                    if (syntaxtrigram in self.unigrams):
+                    if self.current_features[syntaxtrigram]==1:
                         unigramIndex= self.unigrams.index(syntaxtrigram)+1
                         unigramCount= SyntaxTrigramList.count(syntaxtrigram)
                         fv.update({unigramIndex:unigramCount})
@@ -169,35 +172,41 @@ class Train():
             tokens=self.preprocess(line)
             #Store unigrams
             for token in tokens:
-                if token not in self.unigrams:
+                if self.current_features[token]==0:
                     self.unigrams.append(token)
+                    self.current_features[token]=1
             #Create bigrams and Trigrams separated by '_' and store in the feature list
             #The unigrams, bigrams and trigrams feature list is kept same to ease the process fo creating the Feature Vectors
             for i in range(0,len(tokens)-1):
                 bigram = tokens[i]+"_"+tokens[i+1]
-                if bigram not in self.unigrams:
+                if self.current_features[bigram]==0:
                     self.unigrams.append(bigram)
+                    self.current_features[bigram]=1
                 if (i < len(tokens) - 2):
                     trigram = tokens[i]+'_'+tokens[i+1]+'_'+tokens[i+2]
-                    if trigram not in self.unigrams:
+                    if self.current_features[trigram]==0:
                         self.unigrams.append(trigram)
+                        self.current_features[trigram] = 1
             
             #Edits by Ashima Arora: Adding the syntactic ngrams.
             #Syntax Unigrams
             for word_tag in nltk.pos_tag(tokens):
                 tag = word_tag[1]
-                if tag not in self.unigrams:
+                if self.current_features[tag]==0:
                     self.unigrams.append(tag)
+                    self.current_features[tag]=1
             #Syntax Bigrams
             for i in range(0,len(tokens)-1):
                 syntaxBigram = nltk.pos_tag(tokens[i])[0][1]+"_"+nltk.pos_tag(tokens[i+1])[0][1]
-                if syntaxBigram not in self.unigrams:
+                if self.current_features[syntaxBigram]==0:
                     self.unigrams.append(syntaxBigram)
+                    self.current_features[syntaxBigram] = 1
             #Syntax trigrams
             for i in range(0,len(tokens)-2):
                 syntaxTrigram = nltk.pos_tag(tokens[i])[0][1]+"_"+nltk.pos_tag(tokens[i+1])[0][1]+"_"+nltk.pos_tag(tokens[i+2])[0][1]
-                if syntaxTrigram not in self.unigrams:
+                if self.current_features[syntaxTrigram] ==0 :
                     self.unigrams.append(syntaxTrigram)
+                    self.current_features[syntaxTrigram] = 1
 
         self.lastIndex = len(self.unigrams)+1
 
