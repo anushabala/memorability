@@ -1,5 +1,6 @@
 #Written by: Anusha Balakrishnan
 #Date: 4/18/14
+from collections import defaultdict
 import json
 import pickle
 import urllib
@@ -7,14 +8,31 @@ import urllib2
 
 
 class SentimentAnalyzer:
+    def __init__(self, rel="./"):
+        self.MOVIEQUOTE = '%scorpus_polarities.pkl' % rel
+        self.ADS = '%sadvert_polarities.pkl' % rel
+        self.POLITICS = '%spolitical_polarities.pkl' % rel
+        self.MNEMONIC = '%smnemonic_polarities.pkl' % rel
+        self.polarity_mappings = defaultdict(dict)
+
     def save_corpus_polarities(self, in_file, path):
         read_file = file(in_file, 'r')
         polarity_info = []
         line = read_file.readline()
         while line:
-            line = line.strip().split('\t')
-            quote = line[0].strip()
-            mem = line[1].strip()
+            try:
+                line = line.strip().split('\t')
+                quote = line[0].strip()
+                mem = line[1].strip()
+            except IndexError as ie:
+                # print "ERROR HERE:",line
+                quote = line[0].strip()
+                mem = quote[-1]
+                quote = quote[0:-1]
+
+                if mem!='M' and mem!='N':
+                    mem = 'N'
+                print "MODIFIED QUOTE: %s, MEM: %s" % (quote, mem)
             response = self.call_sentiment_analysis_api(quote)
             json_response = json.loads(response)
             if json_response==None:
@@ -25,6 +43,15 @@ class SentimentAnalyzer:
             line = read_file.readline()
 
         pickle.dump(polarity_info, file(path, 'wb'))
+    def load_emotion_mappings(self):
+        all_data = [self.MOVIEQUOTE, self.ADS, self.MNEMONIC, self.POLITICS]
+        for filename in all_data:
+            data = pickle.load(file(filename, 'rb'))
+            for item in data:
+                slogan = item[0]
+                info = item[2]
+                self.polarity_mappings[slogan] = info
+
     def call_sentiment_analysis_api(self,sentence):
         url = "http://text-processing.com/api/sentiment/"
         param = {"text":sentence}
@@ -44,16 +71,26 @@ class SentimentAnalyzer:
     Returns the polarity of a sentence.
     Returns 1 if positive, 0 if neutral, -1 if negative.
     '''
-    def get_polarity(self,response):
-        label = response['label']
-        if label=="neutral" :
-            return 0
-        elif label=="pos":
-            return 1
-        elif label=="neg":
-            return -1
+    def get_polarity(self,quote):
+        if len(self.polarity_mappings.keys())==0:
+            raise AttributeError("Mappings from slogan to emotion polarity haven't been loaded."
+                                 "Run the load_emotion_mappings() function on the SentAnalyzer object.")
         else:
-            return -9
+            quote = quote.strip()
+            if self.polarity_mappings.has_key(quote):
+                response = self.polarity_mappings[quote]
+            else:
+                print "Had to call sentiment analysis API"
+                response = self.call_sentiment_analysis_api(quote)
+                response = json.loads(response)
+            label = response['label']
+            if label=="neutral" :
+                return 0
+            elif label=="pos":
+                return 1
+            elif label=="neg":
+                return -1
+        return -9
 
         # polarities = json_response['probability']
         # print polarities
@@ -79,31 +116,30 @@ class SentimentAnalyzer:
             print v
             return -9
 
-    def get_emotion_strength(self, response):
-        label = response['label']
-        probabilities = response['probability']
-        pos = float(probabilities['pos'])
-        neg = float(probabilities['neg'])
-        neutral = float(probabilities['neutral'])
-
-        if label=="neutral":
-            return 1-neutral
-        elif label=="pos":
-            return pos
-        elif label=="neg":
-            return neg
+    def get_emotion_strength(self, quote):
+        if len(self.polarity_mappings.keys())==0:
+            raise AttributeError("Mappings from slogan to emotion polarity haven't been loaded."
+                                 "Run the load_emotion_mappings() function on the SentAnalyzer object.")
         else:
-            return -9
+            quote = quote.strip()
+            if self.polarity_mappings.has_key(quote):
+                response = self.polarity_mappings[quote]
+            else:
+                print "Had to call sentiment analysis API"
+                response = self.call_sentiment_analysis_api(quote)
+            label = response['label']
+            probabilities = response['probability']
+            pos = float(probabilities['pos'])
+            neg = float(probabilities['neg'])
+            neutral = float(probabilities['neutral'])
 
-    def get_quote_strength(self, quote):
-        response = self.call_sentiment_analysis_api(quote)
-        try:
-            json_response = json.loads(response)
-            strength = self.get_emotion_strength(json_response)
-            return strength
-        except ValueError as v:
-            print response
-            return -9
+            if label=="neutral":
+                return 1-neutral
+            elif label=="pos":
+                return pos
+            elif label=="neg":
+                return neg
+        return -9
 
 
     def compare_polarities(self, first, second):
@@ -126,7 +162,7 @@ class SentimentAnalyzer:
         elif first_label==0 and second_label==0:
             if first_pol==second_pol:
                 return 0
-            if min(first_pol, second_pol) == first_pol:
+            if max(first_pol, second_pol) == first_pol:
                 return 1
             else:
                 return -1
@@ -177,8 +213,10 @@ def test_corpus_polarity():
     print "Percent negative: %f" % (float(neg['N'])/total['N'])
     print "Percent neutral: %f" % (float(neut['N'])/total['N'])
 
-def compare_quote_strengths(corpus_polarities):
-    sentAnalyzer = SentimentAnalyzer()
+def compare_quote_strengths(corpus_polarities, sentAnalyzer=None):
+    if sentAnalyzer==None:
+        sentAnalyzer = SentimentAnalyzer()
+        sentAnalyzer.load_emotion_mappings()
     corpus = pickle.load(file(corpus_polarities, 'rb'))
     i=0
     mem = 0
@@ -189,9 +227,7 @@ def compare_quote_strengths(corpus_polarities):
         nonmem_info = corpus[i+1]
 
         total += 1
-        mem_polarities = mem_info[2]
-        nonmem_polarities = nonmem_info[2]
-        comparison = sentAnalyzer.compare_polarities(mem_polarities, nonmem_polarities)
+        comparison = sentAnalyzer.compare_polarities(mem_info[0], nonmem_info[0])
         if comparison==1:
             mem +=1
         elif comparison==-1:
@@ -207,5 +243,5 @@ def compare_quote_strengths(corpus_polarities):
 
 # test_corpus_polarity()
 sentAnalyzer = SentimentAnalyzer()
-# sentAnalyzer.save_corpus_polarities('../quotes.dat', 'corpus_polarities.pkl')
-compare_quote_strengths('corpus_polarities.pkl')
+sentAnalyzer.load_emotion_mappings()
+compare_quote_strengths('corpus_polarities.pkl', sentAnalyzer=sentAnalyzer)
