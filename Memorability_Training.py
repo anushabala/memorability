@@ -95,7 +95,6 @@ class Train():
                 self.lastIndex = 0
                 self.lastIndex= self.getLastIndex()
                 fv = self.add_extra_features(fv, tokens, quote)
-                print fv
                 #Form the feature vector with unigram, bigram, trigram tokens
                 bigramTokens= ' '
                 trigramTokens= ' '
@@ -128,7 +127,6 @@ class Train():
                         trigramCount= trigramTokens.count(token)
                         fv.update({trigramIndex:trigramCount})
 
-                print 'LEXICAL done'
                 #Edits by Ashima Arora: Adding the syntactic ngrams.
                 #Syntax Unigrams
                 POStags = [x for (x,y) in nltk.pos_tag(tokens)]
@@ -153,7 +151,6 @@ class Train():
                         unigramCount= SyntaxTrigramList.count(syntaxtrigram)
                         fv.update({unigramIndex:unigramCount})
 
-                print 'SYNTACTIC done'
                 #Sort the features by index
                 for key in sorted(fv):
                     st+=' '+str(key)+":"+str(fv[key])
@@ -162,6 +159,8 @@ class Train():
                 fw.write(st+"\n")
 
                 quotecount+=1
+                if quotecount%500==0:
+                    print "Completed %d lines" %quotecount
             f.close()
         fw.close()
         
@@ -170,29 +169,35 @@ class Train():
             tokens=self.preprocess(line)
             #Store unigrams
             for token in tokens:
-                self.unigrams.append(token)
+                if token not in self.unigrams:
+                    self.unigrams.append(token)
             #Create bigrams and Trigrams separated by '_' and store in the feature list
             #The unigrams, bigrams and trigrams feature list is kept same to ease the process fo creating the Feature Vectors
             for i in range(0,len(tokens)-1):
                 bigram = tokens[i]+"_"+tokens[i+1]
-                self.unigrams.append(bigram)
+                if bigram not in self.unigrams:
+                    self.unigrams.append(bigram)
                 if (i < len(tokens) - 2):
                     trigram = tokens[i]+'_'+tokens[i+1]+'_'+tokens[i+2]
-                    self.unigrams.append(trigram)
+                    if trigram not in self.unigrams:
+                        self.unigrams.append(trigram)
             
             #Edits by Ashima Arora: Adding the syntactic ngrams.
             #Syntax Unigrams
             for word_tag in nltk.pos_tag(tokens):
                 tag = word_tag[1]
-                self.unigrams.append(tag)
+                if tag not in self.unigrams:
+                    self.unigrams.append(tag)
             #Syntax Bigrams
             for i in range(0,len(tokens)-1):
                 syntaxBigram = nltk.pos_tag(tokens[i])[0][1]+"_"+nltk.pos_tag(tokens[i+1])[0][1]
-                self.unigrams.append(syntaxBigram)
+                if syntaxBigram not in self.unigrams:
+                    self.unigrams.append(syntaxBigram)
             #Syntax trigrams
             for i in range(0,len(tokens)-2):
                 syntaxTrigram = nltk.pos_tag(tokens[i])[0][1]+"_"+nltk.pos_tag(tokens[i+1])[0][1]+"_"+nltk.pos_tag(tokens[i+2])[0][1]
-                self.unigrams.append(syntaxTrigram)
+                if syntaxTrigram not in self.unigrams:
+                    self.unigrams.append(syntaxTrigram)
 
         self.lastIndex = len(self.unigrams)+1
 
@@ -200,7 +205,6 @@ class Train():
         return len(self.unigrams)
 
     def add_extra_features(self, fv,tokens, quote=None):
-        print quote
         self.lastIndex+=1
         #Length Feature of the quote
         quote_len = len(tokens)
@@ -281,16 +285,20 @@ class Train():
     #Reading the training file and creating the feature vector for that
     #train.readfile(train.trainfile,train.trainparsed)
 
-for fold in range(1,2):
+for fold in range(1,6):
+    print "Fold %d" % fold
     train=Train()
-    print 'Object made.'
+    print '\t[1/4]\tObject made.'
     train_file = train.trainparsed+str(fold)+".dat"
+    print '\t[2/4]\tBuilding quote dictionary...'
     train.buildQuoteDictionaries(train_file)
-    print 'Built quote dictionaries..'
+    print '\t\tBuilt quote dictionaries!'
+    print '\t[3/4]\tBuilding feature dictionary...'
     train.buildFeatureDictionaries()
-    print 'Feature Dictionary built!'
+    print '\t\tFeature Dictionary built!'
+    print '\t[4/4]\tBuilding feature file...'
     train.buildFeatureFile(train_file, train.trainfile, fold)#(train.trainfile)
-
+    print '\t\tFeature file built!'
     test_file = train.testparsed+str(fold)+".dat"
     train.buildQuoteDictionaries(test_file)
     train.buildFeatureFile(test_file, train.testfile, fold )
