@@ -35,9 +35,16 @@ class Train():
         for line in self.lines:
 
             quoteandtag=line.strip().split('\t')
-            # if quoteandtag[0]=='':
-            #     continue
-            if(quoteandtag[1]=='M'):
+            # Some test files don't seem to have tabs encoded correctly
+            # This check takes care of that. If no split is possible by tab, just take
+            #  the last character of the line as M or N
+            if len(quoteandtag)==1:
+                mem = quoteandtag[0][-1]
+                quoteandtag[0] = quoteandtag[0][0:-1].strip()
+            else:
+                mem = quoteandtag[1].strip()
+
+            if(mem=='M'):
                 self.memQuotes[quoteandtag[0]]=1
             else:
                 self.nonmemQuotes[quoteandtag[0]]=1
@@ -92,11 +99,16 @@ class Train():
             quotecount=0
             for line in self.lines:
                 st=''
-                quote=line.strip().split('\t')[0]
-                if(line.strip().split('\t')[1]=='M'):
+                quoteandtag = line.strip().split('\t')
+                quote=quoteandtag[0]
+                if len(quoteandtag)==1:
+                    mem = quote[-1]
+                    quote = quote[0:-1].strip()
+                else:
+                    mem = quoteandtag[1]
+                if(mem=='M'):
                     #st+='1 '
                     st+='1'
-
                 else:
                     #st+='0 '
                     st+='0'
@@ -325,8 +337,8 @@ def create_folds():
         train.buildQuoteDictionaries(test_file)
         train.buildFeatureFile(test_file, train.testfile, fold )
 
-def combined_set():
-    train=Train()
+def create_combined_set():
+    train=Train(include_BOWFeatures=False)
     print "Creating feature file for combined set."
     print '\t[1/4]\tObject made.'
     train_file = "create_datasets/combined.dat"
@@ -340,4 +352,39 @@ def combined_set():
     train.buildFeatureFile(train_file, "create_datasets/fv_combined")#(train.trainfile)
     print '\t\tFeature file built!'
 
-combined_set()
+def create_cross_domain_sets():
+    root = 'Memfiles/'
+    all_tests = ['Advertising', 'Mnemonics', 'Political']
+    for name in all_tests:
+        train = Train(include_BOWFeatures=False)
+        print "Creating feature file for %s" %name
+        print '\t[1/4]\tObject made.'
+        train_file = "%s%s.dat" % (root, name)
+        print '\t[2/4]\tBuilding quote dictionary...'
+        train.buildQuoteDictionaries(train_file)
+        print '\t\tBuilt quote dictionaries!'
+        print '\t[3/4]\tBuilding feature dictionary...'
+        train.buildFeatureDictionaries()
+        print '\t\tFeature Dictionary built!'
+        print '\t[4/4]\tBuilding feature file...'
+        train.buildFeatureFile(train_file, "create_datasets/fv_%s" % name)#(train.trainfile)
+        print '\t\tFeature file built!'
+
+def create_test_set():
+    train=Train()
+    print "Creating feature file for test set."
+    print '\t[1/4]\tObject made.'
+    train_file = "create_datasets/test.dat"
+    print '\t[2/4]\tBuilding quote dictionary...'
+    train.buildQuoteDictionaries(train_file)
+    print '\t\tBuilt quote dictionaries!'
+    print '\t[3/4]\tBuilding feature dictionary...'
+    train.buildFeatureDictionaries()
+    print '\t\tFeature Dictionary built!'
+    print '\t[4/4]\tBuilding feature file...'
+    train.buildFeatureFile(train_file, "create_datasets/fv_test")#(train.trainfile)
+    print '\t\tFeature file built!'
+
+create_combined_set()
+create_cross_domain_sets()
+# create_test_set()

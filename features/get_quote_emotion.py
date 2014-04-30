@@ -113,8 +113,9 @@ class SentimentAnalyzer:
             if self.polarity_mappings.has_key(quote):
                 response = self.polarity_mappings[quote]
             else:
-                print "Had to call sentiment analysis API"
+                print "Had to call sentiment analysis API:\t (%s)" %quote
                 response = self.call_sentiment_analysis_api(quote)
+                response = json.loads(response)
             label = response['label']
             probabilities = response['probability']
             pos = float(probabilities['pos'])
