@@ -1,10 +1,9 @@
-import create_datasets.create_training_corpus as ctc
-import pprint
 import sys
 import nltk
 from nltk.stem.porter import *
 from nltk.tokenize import word_tokenize, wordpunct_tokenize, sent_tokenize
 from distinctness import BrownLanguageModel
+from get_quote_emotion import SentimentAnalyzer
 
 sys.path.insert(0, './features')
 import quote_profanity
@@ -13,11 +12,12 @@ stopwords = ['a', 'able', 'about', 'across', 'after', 'all', 'almost', 'also', '
 
 class Train():
     def __init__(self):
+        self.sentAnalyzer = SentimentAnalyzer(rel="features/")
+        self.sentAnalyzer.load_emotion_mappings()
         self.memQuotes={}
         self.nonmemQuotes={}
         self.featureList=['Unigram','Bigram']
         self.unigrams=[]    #Common list for all features.
-        self.bigrams=[]
         self.trainfile =  'create_datasets/fv_train'
         self.trainparsed = 'create_datasets/train'#'quotes.dat'
         self.testfile    = 'create_datasets/fv_dev'
@@ -95,7 +95,7 @@ class Train():
                 self.lastIndex = 0
                 self.lastIndex= self.getLastIndex()
                 fv = self.add_extra_features(fv, tokens, quote)
-
+                print fv
                 #Form the feature vector with unigram, bigram, trigram tokens
                 bigramTokens= ' '
                 trigramTokens= ' '
@@ -200,6 +200,7 @@ class Train():
         return len(self.unigrams)
 
     def add_extra_features(self, fv,tokens, quote=None):
+        print quote
         self.lastIndex+=1
         #Length Feature of the quote
         quote_len = len(tokens)
@@ -219,10 +220,9 @@ class Train():
         norm_freq = checker.get_normalized_profanity(" ".join(tokens))
         fv.update({self.lastIndex:norm_freq})
 
-        # todo: emotion strength!
         #Get TF-IDF scores for lexical and syntactic N-grams
         ngrams = 3
-        LM = BrownLanguageModel()
+        LM = BrownLanguageModel(rel="features/")
         LM.load_doc_freqs()
         # TF-IDF scores for lexical N-grams
         mode = "lex"
@@ -230,7 +230,8 @@ class Train():
         for i in range(0, ngrams):
              scores[i] = LM.get_tf_idf_score(quote, mode=mode, ngram=i+1)
         # get all possible combinations of lexical TF-IDF scores
-        combined_scores = [].extend(scores)
+        combined_scores = []
+        combined_scores.extend(scores)
         for i in range(0, ngrams):
             for j in range(i+1, ngrams):
                 pair_sum = scores[i] + scores[j]
@@ -242,7 +243,38 @@ class Train():
             self.lastIndex+=1
             fv.update({self.lastIndex:score})
 
+
+        #Get TF-IF scores for syntactic N-grams
+        mode = "pos"
+        scores = [0,0,0]
+        for i in range(0, ngrams):
+             scores[i] = LM.get_tf_idf_score(quote, mode=mode, ngram=i+1)
+        # get all possible combinations of lexical TF-IDF scores
+        combined_scores = []
+        combined_scores.extend(scores)
+        for i in range(0, ngrams):
+            for j in range(i+1, ngrams):
+                pair_sum = scores[i] + scores[j]
+                combined_scores.append(pair_sum)
+                if(j+1 < ngrams):
+                    triple_sum = pair_sum + scores[j+1]
+                    combined_scores.append(triple_sum)
+        for score in combined_scores:
+            self.lastIndex+=1
+            fv.update({self.lastIndex:score})
+
+        # Get emotion strength
+        strength = self.sentAnalyzer.get_emotion_strength(quote)
+        self.lastIndex+=1
+        fv.update({self.lastIndex:strength})
+
+        # Get polarity
+        polarity = self.sentAnalyzer.get_polarity(quote)
+        self.lastIndex+=1
+        fv.update({self.lastIndex:polarity})
+
         return fv
+
 
 #     def computeBigramCounts(self):
     
