@@ -92,18 +92,6 @@ class SentimentAnalyzer:
                 return -1
         return -9
 
-        # polarities = json_response['probability']
-        # print polarities
-        # pos = float(polarities['pos'])
-        # neg = float(polarities['neg'])
-        # neutral = float(polarities['neutral'])
-        # max_pol = max(pos, neg, neutral)
-        # if max_pol==pos:
-        #     return 1
-        # elif max_pol==neg:
-        #     return -1
-        # else:
-        #     return 0
     def __get_quote_polarity(self, quote):
         response = self.call_sentiment_analysis_api(quote)
         if response==None:
@@ -238,10 +226,3 @@ def compare_quote_strengths(corpus_polarities, sentAnalyzer=None):
 
     print "Percentage of pairs where the memorable quote was emotionally stronger: %f" % (float(mem)/total)
     print "Percentage of pairs where the non-memorable quote was emotionally stronger: %f" % (float(nonmem)/total)
-
-
-
-# test_corpus_polarity()
-# sentAnalyzer = SentimentAnalyzer()
-# sentAnalyzer.load_emotion_mappings()
-# compare_quote_strengths('corpus_polarities.pkl', sentAnalyzer=sentAnalyzer)
