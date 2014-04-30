@@ -232,7 +232,7 @@ p110
 Vneg
 p111
 stp112
-a(S'Black is beautiful is a political slogan of a cultural movement that began in the United States of America in the 1960s by African Americans.'
+a(S'Black is beautiful. '
 p113
 g33
 (dp114
@@ -241,19 +241,19 @@ p115
 (dp116
 Vneg
 p117
-F0.220103920977194
+F0.2807699180789859
 sVneutral
 p118
-F0.8809262760818156
+F0.4297151737390557
 sVpos
 p119
-F0.779896079022806
+F0.7192300819210141
 ssVlabel
 p120
-Vneutral
+Vpos
 p121
 stp122
-a(S'Black Power is a political slogan and a name for various associated ideologies.'
+a(S'Black Power.'
 p123
 g2
 (dp124
@@ -262,13 +262,13 @@ p125
 (dp126
 Vneg
 p127
-F0.48624481546533227
+F0.5578328163314745
 sVneutral
 p128
-F0.8397495319728369
+F0.5463888637072368
 sVpos
 p129
-F0.5137551845346677
+F0.44216718366852553
 ssVlabel
 p130
 Vneutral
@@ -1240,7 +1240,7 @@ p590
 Vneutral
 p591
 stp592
-a(S'Piss On Pity is a rallying cry for those in the disability-inclusive circles of world politics.'
+a(S'Piss On Pity.'
 p593
 g33
 (dp594
@@ -1249,16 +1249,16 @@ p595
 (dp596
 Vneg
 p597
-F0.5773673922098623
+F0.588600449236205
 sVneutral
 p598
-F0.5279963096930397
+F0.45837178443381865
 sVpos
 p599
-F0.4226326077901376
+F0.411399550763795
 ssVlabel
 p600
-Vneutral
+Vneg
 p601
 stp602
 a(S'Power to the people.'
@@ -2206,7 +2206,7 @@ p1050
 Vneutral
 p1051
 stp1052
-a(S'I propose (to the American people) a New Deal.'
+a(S'I propose a New Deal.'
 p1053
 g2
 (dp1054
@@ -2215,16 +2215,16 @@ p1055
 (dp1056
 Vneg
 p1057
-F0.360550066738373
+F0.5399150841587204
 sVneutral
 p1058
-F0.5585492367698249
+F0.44789465304752146
 sVpos
 p1059
-F0.639449933261627
+F0.46008491584127964
 ssVlabel
 p1060
-Vneutral
+Vneg
 p1061
 stp1062
 a(S'We are turning the corner.'
@@ -2983,7 +2983,7 @@ p1420
 Vneutral
 p1421
 stp1422
-a(S'A Green New Deal For America - 2012 US presidential campaign slogan of Jill Stein.'
+a(S'A Green New Deal For America.'
 p1423
 g2
 (dp1424
@@ -2992,13 +2992,13 @@ p1425
 (dp1426
 Vneg
 p1427
-F0.3349583899941492
+F0.42268484698316633
 sVneutral
 p1428
-F0.5681920002699049
+F0.6854881504424885
 sVpos
 p1429
-F0.6650416100058508
+F0.5773151530168337
 ssVlabel
 p1430
 Vneutral
