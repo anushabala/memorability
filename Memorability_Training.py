@@ -33,7 +33,10 @@ class Train():
         datafile=open(filename)#('data.dat')
         self.lines=datafile.readlines()
         for line in self.lines:
+
             quoteandtag=line.strip().split('\t')
+            # if quoteandtag[0]=='':
+            #     continue
             if(quoteandtag[1]=='M'):
                 self.memQuotes[quoteandtag[0]]=1
             else:
@@ -326,7 +329,7 @@ def combined_set():
     train=Train()
     print "Creating feature file for combined set."
     print '\t[1/4]\tObject made.'
-    train_file = "combined.dat"
+    train_file = "create_datasets/combined.dat"
     print '\t[2/4]\tBuilding quote dictionary...'
     train.buildQuoteDictionaries(train_file)
     print '\t\tBuilt quote dictionaries!'
@@ -334,7 +337,7 @@ def combined_set():
     train.buildFeatureDictionaries()
     print '\t\tFeature Dictionary built!'
     print '\t[4/4]\tBuilding feature file...'
-    train.buildFeatureFile(train_file, "fv_combined")#(train.trainfile)
+    train.buildFeatureFile(train_file, "create_datasets/fv_combined")#(train.trainfile)
     print '\t\tFeature file built!'
 
 combined_set()
