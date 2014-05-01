@@ -13,10 +13,10 @@ from get_quote_emotion import SentimentAnalyzer
 
 import quote_profanity
 
-stopwords = ['a', 'able', 'about', 'across', 'after', 'all', 'almost', 'also', 'am', 'among', 'an', 'and', 'any', 'are', 'as', 'at', 'be', 'because', 'been', 'but', 'by', 'can', 'cannot', 'could', 'dear', 'did', 'do', 'does', 'either', 'else', 'ever', 'every', 'for', 'from', 'get', 'got', 'had', 'has', 'have', 'he', 'her', 'hers', 'him', 'his', 'how', 'however', 'i', 'if', 'in', 'into', 'is', 'it', 'its', 'just', 'least', 'let', 'like', 'likely', 'may', 'me', 'might', 'most', 'must', 'my', 'neither', 'no', 'nor', 'not', 'of', 'off', 'often', 'on', 'only', 'or', 'other', 'our', 'own', 'rather', 'said', 'say', 'says', 'she', 'should', 'since', 'so', 'some', 'than', 'that', 'the', 'their', 'them', 'then', 'there', 'these', 'they', 'this', 'tis', 'to', 'too', 'twas', 'us', 'wants', 'was', 'we', 'were', 'what', 'when', 'where', 'which', 'while', 'who', 'whom', 'why', 'will', 'with', 'would', 'yet', 'your']
+stopwords = ['a', 'able', 'about', 'across', 'after', 'all', 'almost', 'also', 'am', 'among', 'an', 'and', 'any', 'are', 'as', 'at', 'be', 'because', 'been', 'but', 'by', 'can', 'cannot', 'could', 'dear', 'did', 'do', 'does', 'either', 'else', 'ever', 'every', 'for', 'from', 'get', 'got', 'had', 'has', 'have', 'he', 'her', 'hers', 'him', 'his', 'how', 'however', 'i', 'if', 'in', 'into', 'is', 'it', 'its', 'just', 'least', 'let', 'lets', 'like', 'likely', 'may', 'me', 'might', 'most', 'must', 'my', 'neither', 'no', 'nor', 'not', 'of', 'off', 'often', 'on', 'only', 'or', 'other', 'our', 'own', 'rather', 'said', 'say', 'says', 'she', 'should', 'since', 'so', 'some', 'than', 'that', 'the', 'their', 'them', 'then', 'there', 'these', 'they', 'this', 'tis', 'to', 'too', 'twas', 'us', 'wants', 'was', 'we', 'were', 'what', 'when', 'where', 'which', 'while', 'who', 'whom', 'why', 'will', 'with', 'would', 'yet', 'your']
 
 class Train():
-    def __init__(self, include_BOWFeatures = True):
+    def __init__(self, include_BOWFeatures = True, baseline = False, synt_Ngrams=True):
         self.sentAnalyzer = SentimentAnalyzer(rel="features/")
         self.sentAnalyzer.load_emotion_mappings()
         self.LM = BrownLanguageModel(rel="features/")
@@ -28,12 +28,14 @@ class Train():
         self.featureList=['Unigram','Bigram']
         self.unigrams=[]    #Common list for all features.
         self.current_features = defaultdict(int)
-        self.trainfile =  'create_datasets/fv_train'
-        self.trainparsed = 'create_datasets/train'#'quotes.dat'
-        self.testfile    = 'create_datasets/fv_dev'
-        self.testparsed  = 'create_datasets/dev'
+        self.trainfile =  'Regenerated_data//fv_train'
+        self.trainparsed = 'Regenerated_data//train'#'quotes.dat'
+        self.testfile    = 'Regenerated_data//fv_dev'
+        self.testparsed  = 'Regenerated_data//dev'
         self.lastIndex   = 0
         self.include_BOWFeatures = include_BOWFeatures
+        self.baseline = baseline
+        self.synt_Ngrams = synt_Ngrams
     
     def buildQuoteDictionaries(self, filename):
         datafile=open(filename)#('data.dat')
@@ -125,9 +127,12 @@ class Train():
                 fv = {}
                 self.lastIndex = 0
                 self.lastIndex= self.getLastIndex()
-                fv = self.add_extra_features(fv, tokens, quote)
+                if not self.baseline:
+                    stpwremoved=self.stopwordremoval(tokens)
+                    ftokens=self.stem(stpwremoved)
+                    fv = self.add_extra_features(fv, ftokens, quote)
                 #Form the feature vector with unigram, bigram, trigram tokens
-                if self.include_BOWFeatures:
+                if self.include_BOWFeatures or self.baseline:
                     stpwremoved=self.stopwordremoval(tokens)
                     ftokens=self.stem(stpwremoved)
                     tokens = ftokens
@@ -162,30 +167,32 @@ class Train():
                             trigramCount= trigramTokens.count(token)
                             fv.update({trigramIndex:trigramCount})
 
-                tokens=self.preprocess(quote)
-                #Edits by Ashima Arora: Adding the syntactic ngrams.
-                #Syntax Unigrams
-                POStags = [x for (x,y) in nltk.pos_tag(tokens)]
-                for POStag in POStags:
-                    if self.current_features[POStag]==1:
-                        unigramIndex= self.unigrams.index(POStag)+1
-                        unigramCount= POStags.count(POStag)
-                        fv.update({unigramIndex:unigramCount})
-                #Syntax Bigrams
-                SyntaxBigramList = [POStags[i]+'_'+POStags[i+1] for i in range(0,len(POStags)-1)]
-                for syntaxbigram in SyntaxBigramList:
-                    if self.current_features[syntaxbigram]==1:
-                        unigramIndex= self.unigrams.index(syntaxbigram)+1
-                        unigramCount= SyntaxBigramList.count(syntaxbigram)
-                        fv.update({unigramIndex:unigramCount})
+                if not self.baseline and self.synt_Ngrams:
+                    # print "Computing POS N-grams"
+                    tokens=self.preprocess(quote)
+                    #Edits by Ashima Arora: Adding the syntactic ngrams.
+                    #Syntax Unigrams
+                    POStags = [x for (x,y) in nltk.pos_tag(tokens)]
+                    for POStag in POStags:
+                        if self.current_features[POStag]==1:
+                            unigramIndex= self.unigrams.index(POStag)+1
+                            unigramCount= POStags.count(POStag)
+                            fv.update({unigramIndex:unigramCount})
+                    #Syntax Bigrams
+                    SyntaxBigramList = [POStags[i]+'_'+POStags[i+1] for i in range(0,len(POStags)-1)]
+                    for syntaxbigram in SyntaxBigramList:
+                        if self.current_features[syntaxbigram]==1:
+                            unigramIndex= self.unigrams.index(syntaxbigram)+1
+                            unigramCount= SyntaxBigramList.count(syntaxbigram)
+                            fv.update({unigramIndex:unigramCount})
 
-                #Syntax Trigrams
-                SyntaxTrigramList = [POStags[i]+'_'+POStags[i+1]+'_'+POStags[i+2] for i in range(0,len(POStags)-2)]
-                for syntaxtrigram in SyntaxTrigramList:
-                    if self.current_features[syntaxtrigram]==1:
-                        unigramIndex= self.unigrams.index(syntaxtrigram)+1
-                        unigramCount= SyntaxTrigramList.count(syntaxtrigram)
-                        fv.update({unigramIndex:unigramCount})
+                    #Syntax Trigrams
+                    SyntaxTrigramList = [POStags[i]+'_'+POStags[i+1]+'_'+POStags[i+2] for i in range(0,len(POStags)-2)]
+                    for syntaxtrigram in SyntaxTrigramList:
+                        if self.current_features[syntaxtrigram]==1:
+                            unigramIndex= self.unigrams.index(syntaxtrigram)+1
+                            unigramCount= SyntaxTrigramList.count(syntaxtrigram)
+                            fv.update({unigramIndex:unigramCount})
 
                 #Sort the features by index
                 for key in sorted(fv):
@@ -205,7 +212,7 @@ class Train():
         for line in self.lines:
             tokens=self.preprocess(line)
             #Store unigrams
-            if self.include_BOWFeatures:
+            if self.include_BOWFeatures or self.baseline:
                 stpwremoved=self.stopwordremoval(tokens)
                 ftokens=self.stem(stpwremoved)
                 tokens = ftokens
@@ -226,27 +233,29 @@ class Train():
                             self.unigrams.append(trigram)
                             self.current_features[trigram] = 1
 
-            tokens=self.preprocess(line)
+            if not self.baseline and self.synt_Ngrams:
+                # print "Computing POS N-grams"
+                tokens=self.preprocess(line)
 
-            #Edits by Ashima Arora: Adding the syntactic ngrams.
-            #Syntax Unigrams
-            for word_tag in nltk.pos_tag(tokens):
-                tag = word_tag[1]
-                if self.current_features[tag]==0:
-                    self.unigrams.append(tag)
-                    self.current_features[tag]=1
-            #Syntax Bigrams
-            for i in range(0,len(tokens)-1):
-                syntaxBigram = nltk.pos_tag(tokens[i])[0][1]+"_"+nltk.pos_tag(tokens[i+1])[0][1]
-                if self.current_features[syntaxBigram]==0:
-                    self.unigrams.append(syntaxBigram)
-                    self.current_features[syntaxBigram] = 1
-            #Syntax trigrams
-            for i in range(0,len(tokens)-2):
-                syntaxTrigram = nltk.pos_tag(tokens[i])[0][1]+"_"+nltk.pos_tag(tokens[i+1])[0][1]+"_"+nltk.pos_tag(tokens[i+2])[0][1]
-                if self.current_features[syntaxTrigram] ==0 :
-                    self.unigrams.append(syntaxTrigram)
-                    self.current_features[syntaxTrigram] = 1
+                #Edits by Ashima Arora: Adding the syntactic ngrams.
+                #Syntax Unigrams
+                for word_tag in nltk.pos_tag(tokens):
+                    tag = word_tag[1]
+                    if self.current_features[tag]==0:
+                        self.unigrams.append(tag)
+                        self.current_features[tag]=1
+                #Syntax Bigrams
+                for i in range(0,len(tokens)-1):
+                    syntaxBigram = nltk.pos_tag(tokens[i])[0][1]+"_"+nltk.pos_tag(tokens[i+1])[0][1]
+                    if self.current_features[syntaxBigram]==0:
+                        self.unigrams.append(syntaxBigram)
+                        self.current_features[syntaxBigram] = 1
+                #Syntax trigrams
+                for i in range(0,len(tokens)-2):
+                    syntaxTrigram = nltk.pos_tag(tokens[i])[0][1]+"_"+nltk.pos_tag(tokens[i+1])[0][1]+"_"+nltk.pos_tag(tokens[i+2])[0][1]
+                    if self.current_features[syntaxTrigram] ==0 :
+                        self.unigrams.append(syntaxTrigram)
+                        self.current_features[syntaxTrigram] = 1
 
         self.lastIndex = len(self.unigrams)+1
 
@@ -270,10 +279,10 @@ class Train():
         return repeat
 
     def add_extra_features(self, fv,tokens, quote=None):
-        self.lastIndex+=1
+        # self.lastIndex+=1
         #Length Feature of the quote
-        quote_len = len(tokens)
-        fv.update({self.lastIndex:quote_len})
+        # quote_len = len(tokens)
+        # fv.update({self.lastIndex:quote_len})
 
         self.lastIndex+=1
         #Check for presence of 'you' in the quotes
@@ -368,14 +377,14 @@ class Train():
         fv.update({self.lastIndex:repetition_present})
 
         # Get whether the quote tokens have alliteration or not.
-        self.lastIndex+=1
-        hasA = hasAlliteration(tokens)
-        fv.update({self.lastIndex:hasA})
+        # self.lastIndex+=1
+        # hasA = hasAlliteration(tokens)
+        # fv.update({self.lastIndex:hasA})
 
         # Get whether the quote tokens have rhyme or not.
-        self.lastIndex+=1
-        hasRh = hasRhyme(tokens)
-        fv.update({self.lastIndex:hasRh})
+        # self.lastIndex+=1
+        # hasRh = hasRhyme(tokens)
+        # fv.update({self.lastIndex:hasRh})
 
         return fv
 
@@ -385,7 +394,7 @@ class Train():
     #Reading the training file and creating the feature vector for that
     #train.readfile(train.trainfile,train.trainparsed)
 
-def create_folds(includeBOW = True):
+def create_folds(includeBOW = True, syntNgrams = True):
     for fold in range(1,6):
         print "Fold %d" % fold
         train=Train(include_BOWFeatures=includeBOW)
@@ -401,17 +410,46 @@ def create_folds(includeBOW = True):
         if includeBOW:
             train.buildFeatureFile(train_file, train.trainfile, fold)#(train.trainfile)
         else:
-            train.buildFeatureFile(train_file, train.trainfile+"noBOW", fold)
+            if syntNgrams:
+                train.buildFeatureFile(train_file, train.trainfile+"noBOW", fold)
+            else:
+                train.buildFeatureFile(train_file, train.trainfile+"noNgrams", fold)
         print '\t\tFeature file built!'
         test_file = train.testparsed+str(fold)+".dat"
         train.buildQuoteDictionaries(test_file)
         if includeBOW:
             train.buildFeatureFile(train_file, train.testfile, fold)#(train.trainfile)
         else:
-            train.buildFeatureFile(train_file, train.testfile+"noBOW", fold)
+            if syntNgrams:
+                train.buildFeatureFile(train_file, train.testfile+"noBOW", fold)
+            else:
+                train.buildFeatureFile(train_file, train.testfile+"noNgrams", fold)
 
-def create_combined_set(includeBOW = True):
-    train=Train(include_BOWFeatures=includeBOW)
+def baseline_model():
+    print "[Creating baseline model]"
+    for fold in range(1,6):
+        print "Fold %d" % fold
+        train=Train(baseline=True)
+        print '\t[1/4]\tObject made.'
+        train_file = train.trainparsed+str(fold)+".dat"
+        print '\t[2/4]\tBuilding quote dictionary...'
+        train.buildQuoteDictionaries(train_file)
+        print '\t\tBuilt quote dictionaries!'
+        print '\t[3/4]\tBuilding feature dictionary...'
+        train.buildFeatureDictionaries()
+        print '\t\tFeature Dictionary built!'
+        print '\t[4/4]\tBuilding feature file...'
+        train.buildFeatureFile(train_file, train.trainfile+"_baseline", fold)#(train.trainfile)
+        print '\t\tFeature file built!'
+        test_file = train.testparsed+str(fold)+".dat"
+        train.buildQuoteDictionaries(test_file)
+        train.buildFeatureFile(train_file, train.testfile+"_baseline", fold)#(train.trainfile)
+
+def create_combined_set(includeBOW = True, syntNgrams=True, lexOnly = False):
+    if not lexOnly:
+        train=Train(include_BOWFeatures=includeBOW, synt_Ngrams=syntNgrams)
+    else:
+        train = Train(baseline=True)
     print "Creating feature file for combined set."
     print '\t[1/4]\tObject made.'
     train_file = "create_datasets/combined.dat"
@@ -422,31 +460,37 @@ def create_combined_set(includeBOW = True):
     train.buildFeatureDictionaries()
     print '\t\tFeature Dictionary built!'
     print '\t[4/4]\tBuilding feature file...'
-    if includeBOW:
+    if lexOnly:
+        train.buildFeatureFile(train_file, "create_datasets/fv_combined_baseline")
+    elif includeBOW:
         train.buildFeatureFile(train_file, "create_datasets/fv_combined")#(train.trainfile)
     else:
-        train.buildFeatureFile(train_file, "create_datasets/fv_noBOW_combined")
+        if syntNgrams:
+            train.buildFeatureFile(train_file, "create_datasets/fv_noBOW_combined")
+        else:
+            train.buildFeatureFile(train_file, "create_datasets/fv_noNgrams_combined")
     print '\t\tFeature file built!'
+    return train
 
-def create_cross_domain_sets(includeBOW = True):
+def prepare_cross_domain_sets(includeBOW = True, syntNgrams = True, lexOnly=False):
+    train = create_combined_set(includeBOW=includeBOW, syntNgrams = syntNgrams, lexOnly=lexOnly)
     root = 'Memfiles/'
     all_tests = ['Advertising', 'Mnemonics', 'Political']
     for name in all_tests:
-        train = Train(include_BOWFeatures=includeBOW)
-        print "Creating feature file for %s" %name
-        print '\t[1/4]\tObject made.'
         train_file = "%s%s.dat" % (root, name)
-        print '\t[2/4]\tBuilding quote dictionary...'
+        print '\t[1/2]\tBuilding quote dictionary...'
         train.buildQuoteDictionaries(train_file)
         print '\t\tBuilt quote dictionaries!'
-        print '\t[3/4]\tBuilding feature dictionary...'
-        train.buildFeatureDictionaries()
-        print '\t\tFeature Dictionary built!'
-        print '\t[4/4]\tBuilding feature file...'
-        if includeBOW:
-            train.buildFeatureFile(train_file, "create_datasets/fv_%s" % name)#(train.trainfile)
+        print '\t[2/2]\tBuilding feature file...'
+        if lexOnly:
+            train.buildFeatureFile(train_file, "create_datasets/fv_baseline_%s" % name)
+        elif includeBOW:
+            train.buildFeatureFile(train_file, "create_datasets/fv_%s" % name)
         else:
-            train.buildFeatureFile(train_file, "create_datasets/fv_noBOW_%s" % name)
+            if syntNgrams:
+                train.buildFeatureFile(train_file, "create_datasets/fv_noBOW_%s" % name)
+            else:
+                train.buildFeatureFile(train_file, "create_datasets/fv_noNgrams_%s" % name)
         print '\t\tFeature file built!'
 
 def create_test_set(includeBOW = True):
@@ -467,7 +511,10 @@ def create_test_set(includeBOW = True):
         train.buildFeatureFile(train_file, "create_datasets/fv_noBOW_test")
     print '\t\tFeature file built!'
 
-create_folds(False)
-create_combined_set(False)
-create_cross_domain_sets(False)
-create_test_set(False)
+# create_folds(includeBOW=False, syntNgrams=False)
+# create_combined_set(includeBOW=False)
+# create_test_set(False)
+# baseline_model()
+prepare_cross_domain_sets(includeBOW=False, syntNgrams=False, lexOnly=True)
+
+# 12:50 PM: 5 fol without BOW and without synt n-grams

@@ -12,8 +12,8 @@ Splits a combined training+validation set into training and validation, dependin
   '''
 def get_kth_split(combined, k, total=5):
     data=[]
-    train_file = 'train%d.dat' % k
-    dev_file = 'dev%d.dat' % k
+    train_file = '../Regenerated_data/train%d.dat' % k
+    dev_file = '../Regenerated_data/dev%d.dat' % k
     out_file1 = file(train_file,'w')
     out_file2 = file(dev_file,'w')
     combined_corpus = file(combined, 'r')
@@ -76,20 +76,19 @@ def random_split(lines, train, val, test):
     return combined_set, test_set
 
     # print combined
+# lines = read_data('../quotes.dat')
+# combined, test = random_split(lines, 0.6, 0.2, 0.2)
+# combined_file = file('../Regenerated_data/combined.dat', 'w')
+# test_file = file('../Regenerated_data/test.dat', 'w')
+# for line in combined:
+#     combined_file.write(line+'\n')
+#
+# for line in test:
+#     test_file.write(line+'\n')
+#
+# combined_file.close()
+# test_file.close()
 
-'''lines = read_data('quotes.dat')
-combined, test = random_split(lines, 0.6, 0.2, 0.2)
-combined_file = file('combined.dat', 'w')
-test_file = file('test.dat', 'w')
-for line in combined:
-    combined_file.write(line+'\n')
-
-for line in test:
-    test_file.write(line+'\n')
-
-combined_file.close()
-test_file.close()
-'''
 # train_set, val_set = get_kth_split(combined, 1, 5)
 for i in range(1,6):
-    get_kth_split("combined.dat", i, 5)
+    get_kth_split("../Regenerated_data/combined.dat", i, 5)
