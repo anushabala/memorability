@@ -1,4 +1,7 @@
 import sys
+from checkAlliterationFeature import hasAlliteration
+from checkRhyme import hasRhyme
+
 sys.path.insert(0, './features')
 from collections import defaultdict
 import nltk
@@ -366,13 +369,13 @@ class Train():
 
         # Get whether the quote tokens have alliteration or not.
         self.lastIndex+=1
-        hasA = self.hasAlliteration(tokens)
+        hasA = hasAlliteration(tokens)
         fv.update({self.lastIndex:hasA})
 
         # Get whether the quote tokens have rhyme or not.
         self.lastIndex+=1
-        hasRhyme = self.hasRhyme(tokens)
-        fv.update({self.lastIndex:hasRhyme})
+        hasRh = hasRhyme(tokens)
+        fv.update({self.lastIndex:hasRh})
 
         return fv
 

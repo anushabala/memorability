@@ -71,4 +71,4 @@ def checkAlliteration():
     print "NON-MEMORABLE QUOTES"
     print "Percent with Alliteration: %f" % (float(A_present['N'])/total['N'])
     print "Percent without Alliteration: %f" % (float(A_absent['N'])/total['N'])
-checkAlliteration()
+# checkAlliteration()

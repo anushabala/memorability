@@ -83,4 +83,4 @@ def checkRhyme():
     print "NON-MEMORABLE QUOTES"
     print "Percent with Rhyme: %f" % (float(A_present['N'])/total['N'])
     print "Percent without Rhyme: %f" % (float(A_absent['N'])/total['N'])
-checkRhyme()
+# checkRhyme()
