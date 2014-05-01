@@ -35,14 +35,14 @@ def getTokens(quote):
     tokens = removeStopWords(tokens)
     return tokens
 
-def hasAlliteration(quote,mem,k=1):
-    words = getTokens(quote)
-    print quote,': ',mem,': '
+def hasAlliteration(words,k=1):
+    # words = getTokens(quote)
+    # print quote,': ',mem,': '
     for i in range(0,len(words)-1):
         curr_word = words[i]
         next_word = words[i+1]
         if(curr_word[:k]==next_word[:k]):
-            print 'Alliteration!!'
+            # print 'Alliteration!!'
             return 1 
     return 0
 

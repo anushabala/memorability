@@ -1,5 +1,6 @@
-from collections import defaultdict
 import sys
+sys.path.insert(0, './features')
+from collections import defaultdict
 import nltk
 from nltk.stem.porter import *
 from nltk.tokenize import word_tokenize, wordpunct_tokenize, sent_tokenize
@@ -7,7 +8,6 @@ from detect_commands import CommandDetector
 from distinctness import BrownLanguageModel
 from get_quote_emotion import SentimentAnalyzer
 
-sys.path.insert(0, './features')
 import quote_profanity
 
 stopwords = ['a', 'able', 'about', 'across', 'after', 'all', 'almost', 'also', 'am', 'among', 'an', 'and', 'any', 'are', 'as', 'at', 'be', 'because', 'been', 'but', 'by', 'can', 'cannot', 'could', 'dear', 'did', 'do', 'does', 'either', 'else', 'ever', 'every', 'for', 'from', 'get', 'got', 'had', 'has', 'have', 'he', 'her', 'hers', 'him', 'his', 'how', 'however', 'i', 'if', 'in', 'into', 'is', 'it', 'its', 'just', 'least', 'let', 'like', 'likely', 'may', 'me', 'might', 'most', 'must', 'my', 'neither', 'no', 'nor', 'not', 'of', 'off', 'often', 'on', 'only', 'or', 'other', 'our', 'own', 'rather', 'said', 'say', 'says', 'she', 'should', 'since', 'so', 'some', 'than', 'that', 'the', 'their', 'them', 'then', 'there', 'these', 'they', 'this', 'tis', 'to', 'too', 'twas', 'us', 'wants', 'was', 'we', 'were', 'what', 'when', 'where', 'which', 'while', 'who', 'whom', 'why', 'will', 'with', 'would', 'yet', 'your']
@@ -363,6 +363,16 @@ class Train():
         self.lastIndex+=1
         repetition_present=self.check_repeat(tokens)
         fv.update({self.lastIndex:repetition_present})
+
+        # Get whether the quote tokens have alliteration or not.
+        self.lastIndex+=1
+        hasA = self.hasAlliteration(tokens)
+        fv.update({self.lastIndex:hasA})
+
+        # Get whether the quote tokens have rhyme or not.
+        self.lastIndex+=1
+        hasRhyme = self.hasRhyme(tokens)
+        fv.update({self.lastIndex:hasRhyme})
 
         return fv
 

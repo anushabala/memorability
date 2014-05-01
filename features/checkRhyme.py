@@ -38,9 +38,9 @@ def getTokens(quote):
 def getPreprocessedQuote(quote):
     return " ".join(getTokens(quote))
 
-def hasRhyme(quote,mem,k=3):
-    words = getTokens(quote)
-    print getPreprocessedQuote(quote),': ',mem,': '
+def hasRhyme(words,k=3):
+    # words = getTokens(quote)
+    # print getPreprocessedQuote(quote),': ',mem,': '
     # for i in range(0,len(words)-1):
     #     curr_word = words[i]
     #     next_word = words[i+1]
@@ -52,7 +52,7 @@ def hasRhyme(quote,mem,k=3):
     rhyme={}
     for word in words:
         if(word[-k:] in rhyme and len(word[-k:])>=k):
-            print 'RHYME!!', '  ', word[-k:]
+            # print 'RHYME!!', '  ', word[-k:]
             return 1
         else:
             rhyme[word[-k:]] = 1
