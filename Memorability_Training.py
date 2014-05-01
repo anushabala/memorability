@@ -88,9 +88,9 @@ class Train():
     def preprocess(self,sentence):
         tokens=self.tokenize(sentence)
         lcased=self.lowercase(tokens)
-        stpwremoved=self.stopwordremoval(lcased)
-        ftokens=self.stem(stpwremoved)
-        return ftokens        
+        # stpwremoved=self.stopwordremoval(lcased)
+        # ftokens=self.stem(stpwremoved)
+        return lcased
         
     def buildFeatureFile(self, filename, path, fold=0):
         if fold!=0:
@@ -125,6 +125,9 @@ class Train():
                 fv = self.add_extra_features(fv, tokens, quote)
                 #Form the feature vector with unigram, bigram, trigram tokens
                 if self.include_BOWFeatures:
+                    stpwremoved=self.stopwordremoval(tokens)
+                    ftokens=self.stem(stpwremoved)
+                    tokens = ftokens
                     bigramTokens= ' '
                     trigramTokens= ' '
                     for i in range(0,len(tokens)):
@@ -156,29 +159,30 @@ class Train():
                             trigramCount= trigramTokens.count(token)
                             fv.update({trigramIndex:trigramCount})
 
-                    #Edits by Ashima Arora: Adding the syntactic ngrams.
-                    #Syntax Unigrams
-                    POStags = [x for (x,y) in nltk.pos_tag(tokens)]
-                    for POStag in POStags:
-                        if self.current_features[POStag]==1:
-                            unigramIndex= self.unigrams.index(POStag)+1
-                            unigramCount= POStags.count(POStag)
-                            fv.update({unigramIndex:unigramCount})
-                    #Syntax Bigrams
-                    SyntaxBigramList = [POStags[i]+'_'+POStags[i+1] for i in range(0,len(POStags)-1)]
-                    for syntaxbigram in SyntaxBigramList:
-                        if self.current_features[syntaxbigram]==1:
-                            unigramIndex= self.unigrams.index(syntaxbigram)+1
-                            unigramCount= SyntaxBigramList.count(syntaxbigram)
-                            fv.update({unigramIndex:unigramCount})
+                tokens=self.preprocess(quote)
+                #Edits by Ashima Arora: Adding the syntactic ngrams.
+                #Syntax Unigrams
+                POStags = [x for (x,y) in nltk.pos_tag(tokens)]
+                for POStag in POStags:
+                    if self.current_features[POStag]==1:
+                        unigramIndex= self.unigrams.index(POStag)+1
+                        unigramCount= POStags.count(POStag)
+                        fv.update({unigramIndex:unigramCount})
+                #Syntax Bigrams
+                SyntaxBigramList = [POStags[i]+'_'+POStags[i+1] for i in range(0,len(POStags)-1)]
+                for syntaxbigram in SyntaxBigramList:
+                    if self.current_features[syntaxbigram]==1:
+                        unigramIndex= self.unigrams.index(syntaxbigram)+1
+                        unigramCount= SyntaxBigramList.count(syntaxbigram)
+                        fv.update({unigramIndex:unigramCount})
 
-                    #Syntax Trigrams
-                    SyntaxTrigramList = [POStags[i]+'_'+POStags[i+1]+'_'+POStags[i+2] for i in range(0,len(POStags)-2)]
-                    for syntaxtrigram in SyntaxTrigramList:
-                        if self.current_features[syntaxtrigram]==1:
-                            unigramIndex= self.unigrams.index(syntaxtrigram)+1
-                            unigramCount= SyntaxTrigramList.count(syntaxtrigram)
-                            fv.update({unigramIndex:unigramCount})
+                #Syntax Trigrams
+                SyntaxTrigramList = [POStags[i]+'_'+POStags[i+1]+'_'+POStags[i+2] for i in range(0,len(POStags)-2)]
+                for syntaxtrigram in SyntaxTrigramList:
+                    if self.current_features[syntaxtrigram]==1:
+                        unigramIndex= self.unigrams.index(syntaxtrigram)+1
+                        unigramCount= SyntaxTrigramList.count(syntaxtrigram)
+                        fv.update({unigramIndex:unigramCount})
 
                 #Sort the features by index
                 for key in sorted(fv):
@@ -195,10 +199,13 @@ class Train():
         fw.close()
         
     def buildFeatureDictionaries(self):
-        if self.include_BOWFeatures:
-            for line in self.lines:
-                tokens=self.preprocess(line)
-                #Store unigrams
+        for line in self.lines:
+            tokens=self.preprocess(line)
+            #Store unigrams
+            if self.include_BOWFeatures:
+                stpwremoved=self.stopwordremoval(tokens)
+                ftokens=self.stem(stpwremoved)
+                tokens = ftokens
                 for token in tokens:
                     if self.current_features[token]==0:
                         self.unigrams.append(token)
@@ -216,25 +223,27 @@ class Train():
                             self.unigrams.append(trigram)
                             self.current_features[trigram] = 1
 
-                #Edits by Ashima Arora: Adding the syntactic ngrams.
-                #Syntax Unigrams
-                for word_tag in nltk.pos_tag(tokens):
-                    tag = word_tag[1]
-                    if self.current_features[tag]==0:
-                        self.unigrams.append(tag)
-                        self.current_features[tag]=1
-                #Syntax Bigrams
-                for i in range(0,len(tokens)-1):
-                    syntaxBigram = nltk.pos_tag(tokens[i])[0][1]+"_"+nltk.pos_tag(tokens[i+1])[0][1]
-                    if self.current_features[syntaxBigram]==0:
-                        self.unigrams.append(syntaxBigram)
-                        self.current_features[syntaxBigram] = 1
-                #Syntax trigrams
-                for i in range(0,len(tokens)-2):
-                    syntaxTrigram = nltk.pos_tag(tokens[i])[0][1]+"_"+nltk.pos_tag(tokens[i+1])[0][1]+"_"+nltk.pos_tag(tokens[i+2])[0][1]
-                    if self.current_features[syntaxTrigram] ==0 :
-                        self.unigrams.append(syntaxTrigram)
-                        self.current_features[syntaxTrigram] = 1
+            tokens=self.preprocess(line)
+
+            #Edits by Ashima Arora: Adding the syntactic ngrams.
+            #Syntax Unigrams
+            for word_tag in nltk.pos_tag(tokens):
+                tag = word_tag[1]
+                if self.current_features[tag]==0:
+                    self.unigrams.append(tag)
+                    self.current_features[tag]=1
+            #Syntax Bigrams
+            for i in range(0,len(tokens)-1):
+                syntaxBigram = nltk.pos_tag(tokens[i])[0][1]+"_"+nltk.pos_tag(tokens[i+1])[0][1]
+                if self.current_features[syntaxBigram]==0:
+                    self.unigrams.append(syntaxBigram)
+                    self.current_features[syntaxBigram] = 1
+            #Syntax trigrams
+            for i in range(0,len(tokens)-2):
+                syntaxTrigram = nltk.pos_tag(tokens[i])[0][1]+"_"+nltk.pos_tag(tokens[i+1])[0][1]+"_"+nltk.pos_tag(tokens[i+2])[0][1]
+                if self.current_features[syntaxTrigram] ==0 :
+                    self.unigrams.append(syntaxTrigram)
+                    self.current_features[syntaxTrigram] = 1
 
         self.lastIndex = len(self.unigrams)+1
 
@@ -419,7 +428,7 @@ def create_test_set(includeBOW = True):
         train.buildFeatureFile(train_file, "create_datasets/fv_noBOW_test")
     print '\t\tFeature file built!'
 
-create_folds(True)
-create_combined_set(True)
-create_cross_domain_sets(True)
-create_test_set(True)
+create_folds(False)
+create_combined_set(False)
+create_cross_domain_sets(False)
+create_test_set(False)
