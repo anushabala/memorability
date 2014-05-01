@@ -3,6 +3,7 @@ import sys
 import nltk
 from nltk.stem.porter import *
 from nltk.tokenize import word_tokenize, wordpunct_tokenize, sent_tokenize
+from detect_commands import CommandDetector
 from distinctness import BrownLanguageModel
 from get_quote_emotion import SentimentAnalyzer
 
@@ -17,6 +18,8 @@ class Train():
         self.sentAnalyzer.load_emotion_mappings()
         self.LM = BrownLanguageModel(rel="features/")
         self.LM.load_doc_freqs()
+        self.CD = CommandDetector(rel="features/")
+        self.CD.load_imperatives()
         self.memQuotes={}
         self.nonmemQuotes={}
         self.featureList=['Unigram','Bigram']
@@ -273,9 +276,13 @@ class Train():
             for j in range(i+1, ngrams):
                 pair_sum = scores[i] + scores[j]
                 combined_scores.append(pair_sum)
+                pair_diff = scores[i] - scores[j]
+                combined_scores.append(pair_diff)
                 if(j+1 < ngrams):
                     triple_sum = pair_sum + scores[j+1]
                     combined_scores.append(triple_sum)
+                    triple_diff = pair_diff - scores[j+1]
+                    combined_scores.append(triple_diff)
         for score in combined_scores:
             self.lastIndex+=1
             fv.update({self.lastIndex:score})
@@ -293,9 +300,13 @@ class Train():
             for j in range(i+1, ngrams):
                 pair_sum = scores[i] + scores[j]
                 combined_scores.append(pair_sum)
+                pair_diff = scores[i] - scores[j]
+                combined_scores.append(pair_diff)
                 if(j+1 < ngrams):
                     triple_sum = pair_sum + scores[j+1]
                     combined_scores.append(triple_sum)
+                    triple_diff = pair_diff - scores[j+1]
+                    combined_scores.append(triple_diff)
         for score in combined_scores:
             self.lastIndex+=1
             fv.update({self.lastIndex:score})
@@ -310,6 +321,14 @@ class Train():
         self.lastIndex+=1
         fv.update({self.lastIndex:polarity})
 
+        # Get whether the quote is a command or not (binary feature)
+        self.lastIndex+=1
+        is_command = self.CD.is_quote_command(quote)
+        if is_command:
+            fv.update({self.lastIndex:1})
+        else:
+            fv.update({self.lastIndex:0})
+
         return fv
 
 
@@ -318,10 +337,10 @@ class Train():
     #Reading the training file and creating the feature vector for that
     #train.readfile(train.trainfile,train.trainparsed)
 
-def create_folds():
+def create_folds(includeBOW = True):
     for fold in range(1,6):
         print "Fold %d" % fold
-        train=Train()
+        train=Train(include_BOWFeatures=includeBOW)
         print '\t[1/4]\tObject made.'
         train_file = train.trainparsed+str(fold)+".dat"
         print '\t[2/4]\tBuilding quote dictionary...'
@@ -331,14 +350,20 @@ def create_folds():
         train.buildFeatureDictionaries()
         print '\t\tFeature Dictionary built!'
         print '\t[4/4]\tBuilding feature file...'
-        train.buildFeatureFile(train_file, train.trainfile, fold)#(train.trainfile)
+        if includeBOW:
+            train.buildFeatureFile(train_file, train.trainfile, fold)#(train.trainfile)
+        else:
+            train.buildFeatureFile(train_file, train.trainfile+"noBOW", fold)
         print '\t\tFeature file built!'
         test_file = train.testparsed+str(fold)+".dat"
         train.buildQuoteDictionaries(test_file)
-        train.buildFeatureFile(test_file, train.testfile, fold )
+        if includeBOW:
+            train.buildFeatureFile(train_file, train.testfile, fold)#(train.trainfile)
+        else:
+            train.buildFeatureFile(train_file, train.testfile+"noBOW", fold)
 
-def create_combined_set():
-    train=Train(include_BOWFeatures=False)
+def create_combined_set(includeBOW = True):
+    train=Train(include_BOWFeatures=includeBOW)
     print "Creating feature file for combined set."
     print '\t[1/4]\tObject made.'
     train_file = "create_datasets/combined.dat"
@@ -349,14 +374,17 @@ def create_combined_set():
     train.buildFeatureDictionaries()
     print '\t\tFeature Dictionary built!'
     print '\t[4/4]\tBuilding feature file...'
-    train.buildFeatureFile(train_file, "create_datasets/fv_combined")#(train.trainfile)
+    if includeBOW:
+        train.buildFeatureFile(train_file, "create_datasets/fv_combined")#(train.trainfile)
+    else:
+        train.buildFeatureFile(train_file, "create_datasets/fv_noBOW_combined")
     print '\t\tFeature file built!'
 
-def create_cross_domain_sets():
+def create_cross_domain_sets(includeBOW = True):
     root = 'Memfiles/'
     all_tests = ['Advertising', 'Mnemonics', 'Political']
     for name in all_tests:
-        train = Train(include_BOWFeatures=False)
+        train = Train(include_BOWFeatures=includeBOW)
         print "Creating feature file for %s" %name
         print '\t[1/4]\tObject made.'
         train_file = "%s%s.dat" % (root, name)
@@ -367,11 +395,14 @@ def create_cross_domain_sets():
         train.buildFeatureDictionaries()
         print '\t\tFeature Dictionary built!'
         print '\t[4/4]\tBuilding feature file...'
-        train.buildFeatureFile(train_file, "create_datasets/fv_%s" % name)#(train.trainfile)
+        if includeBOW:
+            train.buildFeatureFile(train_file, "create_datasets/fv_%s" % name)#(train.trainfile)
+        else:
+            train.buildFeatureFile(train_file, "create_datasets/fv_noBOW_%s" % name)
         print '\t\tFeature file built!'
 
-def create_test_set():
-    train=Train()
+def create_test_set(includeBOW = True):
+    train=Train(include_BOWFeatures=includeBOW)
     print "Creating feature file for test set."
     print '\t[1/4]\tObject made.'
     train_file = "create_datasets/test.dat"
@@ -382,9 +413,13 @@ def create_test_set():
     train.buildFeatureDictionaries()
     print '\t\tFeature Dictionary built!'
     print '\t[4/4]\tBuilding feature file...'
-    train.buildFeatureFile(train_file, "create_datasets/fv_test")#(train.trainfile)
+    if includeBOW:
+        train.buildFeatureFile(train_file, "create_datasets/fv_test")#(train.trainfile)
+    else:
+        train.buildFeatureFile(train_file, "create_datasets/fv_noBOW_test")
     print '\t\tFeature file built!'
 
-create_combined_set()
-create_cross_domain_sets()
-# create_test_set()
+create_folds(True)
+create_combined_set(True)
+create_cross_domain_sets(True)
+create_test_set(True)
