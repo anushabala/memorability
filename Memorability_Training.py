@@ -250,6 +250,22 @@ class Train():
     def getLastIndex(self):
         return len(self.unigrams)
 
+    def get_ners(self, tokens):
+        #Get the number fo NER's for the sentence
+        pos_tags = nltk.pos_tag(tokens)
+        chunked_sentences =  nltk.ne_chunk(pos_tags, binary=True)
+        number = 0
+        for tree in chunked_sentences:
+            number+=1
+        return number
+
+    def check_repeat(self, tokens):
+        repeat =0
+        for token in tokens:
+            if tokens.count(token) > 1:
+                repeat += 1
+        return repeat
+
     def add_extra_features(self, fv,tokens, quote=None):
         self.lastIndex+=1
         #Length Feature of the quote
@@ -337,6 +353,16 @@ class Train():
             fv.update({self.lastIndex:1})
         else:
             fv.update({self.lastIndex:0})
+
+        #Number of NERS
+        self.lastIndex+=1
+        ner_count=self.get_ners(tokens)
+        fv.update({self.lastIndex:ner_count})
+
+        #Repetition feature
+        self.lastIndex+=1
+        repetition_present=self.check_repeat(tokens)
+        fv.update({self.lastIndex:repetition_present})
 
         return fv
 
