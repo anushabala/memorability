@@ -28,10 +28,10 @@ class Train():
         self.featureList=['Unigram','Bigram']
         self.unigrams=[]    #Common list for all features.
         self.current_features = defaultdict(int)
-        self.trainfile =  'Regenerated_data//fv_train'
-        self.trainparsed = 'Regenerated_data//train'#'quotes.dat'
-        self.testfile    = 'Regenerated_data//fv_dev'
-        self.testparsed  = 'Regenerated_data//dev'
+        self.trainfile =  'create_datasets/fv_train'
+        self.trainparsed = 'create_datasets/train'#'quotes.dat'
+        self.testfile    = 'create_datasets/fv_dev'
+        self.testparsed  = 'create_datasets/dev'
         self.lastIndex   = 0
         self.include_BOWFeatures = include_BOWFeatures
         self.baseline = baseline
@@ -366,10 +366,10 @@ class Train():
         else:
             fv.update({self.lastIndex:0})
 
-        #Number of NERS
-        self.lastIndex+=1
-        ner_count=self.get_ners(tokens)
-        fv.update({self.lastIndex:ner_count})
+        # #Number of NERS
+        # self.lastIndex+=1
+        # ner_count=self.get_ners(tokens)
+        # fv.update({self.lastIndex:ner_count})
 
         #Repetition feature
         self.lastIndex+=1
@@ -408,7 +408,11 @@ def create_folds(includeBOW = True, syntNgrams = True):
         print '\t\tFeature Dictionary built!'
         print '\t[4/4]\tBuilding feature file...'
         if includeBOW:
-            train.buildFeatureFile(train_file, train.trainfile, fold)#(train.trainfile)
+            if not syntNgrams:
+                train.buildFeatureFile(train_file, train.trainfile+"noSynt", fold)#(train.trainfile)
+            else:
+                train.buildFeatureFile(train_file, train.trainfile, fold)#(train.trainfile)
+
         else:
             if syntNgrams:
                 train.buildFeatureFile(train_file, train.trainfile+"noBOW", fold)
@@ -418,7 +422,10 @@ def create_folds(includeBOW = True, syntNgrams = True):
         test_file = train.testparsed+str(fold)+".dat"
         train.buildQuoteDictionaries(test_file)
         if includeBOW:
-            train.buildFeatureFile(train_file, train.testfile, fold)#(train.trainfile)
+            if not syntNgrams:
+                train.buildFeatureFile(train_file, train.testfile+"noSynt", fold)#(train.trainfile)
+            else:
+                train.buildFeatureFile(train_file, train.testfile, fold)#(train.trainfile)
         else:
             if syntNgrams:
                 train.buildFeatureFile(train_file, train.testfile+"noBOW", fold)
@@ -461,14 +468,17 @@ def create_combined_set(includeBOW = True, syntNgrams=True, lexOnly = False):
     print '\t\tFeature Dictionary built!'
     print '\t[4/4]\tBuilding feature file...'
     if lexOnly:
-        train.buildFeatureFile(train_file, "create_datasets/fv_combined_baseline")
+        train.buildFeatureFile(train_file, "Regenerated_data/fv_combined_baseline")
     elif includeBOW:
-        train.buildFeatureFile(train_file, "create_datasets/fv_combined")#(train.trainfile)
+        if syntNgrams:
+            train.buildFeatureFile(train_file, "Regenerated_data/fv_combined")#(train.trainfile)
+        else:
+            train.buildFeatureFile(train_file, "Regenerated_data/fv_noSynt_combined")#(train.trainfile)
     else:
         if syntNgrams:
-            train.buildFeatureFile(train_file, "create_datasets/fv_noBOW_combined")
+            train.buildFeatureFile(train_file, "Regenerated_data/fv_noBOW_combined")
         else:
-            train.buildFeatureFile(train_file, "create_datasets/fv_noNgrams_combined")
+            train.buildFeatureFile(train_file, "Regenerated_data/fv_noNgrams_combined")
     print '\t\tFeature file built!'
     return train
 
@@ -483,14 +493,17 @@ def prepare_cross_domain_sets(includeBOW = True, syntNgrams = True, lexOnly=Fals
         print '\t\tBuilt quote dictionaries!'
         print '\t[2/2]\tBuilding feature file...'
         if lexOnly:
-            train.buildFeatureFile(train_file, "create_datasets/fv_baseline_%s" % name)
+            train.buildFeatureFile(train_file, "Regenerated_data/fv_baseline_%s" % name)
         elif includeBOW:
-            train.buildFeatureFile(train_file, "create_datasets/fv_%s" % name)
+            if syntNgrams:
+                train.buildFeatureFile(train_file, "Regenerated_data/fv_%s" % name)
+            else:
+                train.buildFeatureFile(train_file, "Regenerated_data/fv_noSynt_%s" % name)
         else:
             if syntNgrams:
-                train.buildFeatureFile(train_file, "create_datasets/fv_noBOW_%s" % name)
+                train.buildFeatureFile(train_file, "Regenerated_data/fv_noBOW_%s" % name)
             else:
-                train.buildFeatureFile(train_file, "create_datasets/fv_noNgrams_%s" % name)
+                train.buildFeatureFile(train_file, "Regenerated_data/fv_noNgrams_%s" % name)
         print '\t\tFeature file built!'
 
 def create_test_set(includeBOW = True):
@@ -511,10 +524,12 @@ def create_test_set(includeBOW = True):
         train.buildFeatureFile(train_file, "create_datasets/fv_noBOW_test")
     print '\t\tFeature file built!'
 
-# create_folds(includeBOW=False, syntNgrams=False)
+# create_folds(includeBOW=True, syntNgrams=True)
 # create_combined_set(includeBOW=False)
 # create_test_set(False)
 # baseline_model()
-prepare_cross_domain_sets(includeBOW=False, syntNgrams=False, lexOnly=True)
+prepare_cross_domain_sets(includeBOW=True, syntNgrams=False, lexOnly=False)
 
-# 12:50 PM: 5 fol without BOW and without synt n-grams
+## May 7, 12:30AM: Tab 1: 5 folds without Synt
+# May 7, 12:30AM: Tab 2: 5 folds without NERs
+# May 7, 1:15AM: Tab 3: Cross domain without NERs

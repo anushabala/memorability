@@ -359,11 +359,11 @@ def compare_test_distinctiveness(path):
     dist = {'M':0, 'N':0}
     corpus_file = file(path, 'r')
     line = corpus_file.readline()
-    ngram = 1
+    ngram = 3
     mode = "pos"
+    best_quotes = {}
     while line:
         line = line.strip()
-        print line
         if line=="":
             continue
         line = line.split('\t')
@@ -375,6 +375,8 @@ def compare_test_distinctiveness(path):
 
         score = LM.get_tf_idf_score(slogan, mode=mode, ngram=ngram)
         dist[mem] += score
+        if mem=='M':
+            best_quotes[score] = slogan
         total[mem]+=1
         line = corpus_file.readline()
     appendstr = "lexical"
@@ -382,8 +384,11 @@ def compare_test_distinctiveness(path):
         appendstr = "syntactic"
     print "Average %d-gram %s TF-IDF score for memorable slogans: %f" % (ngram, appendstr, float(dist['M'])/total['M'])
     print "Average %d-gram %s TF-IDF score for non-memorable slogans: %f" % (ngram, appendstr, float(dist['N'])/total['N'])
+    for key in sorted(best_quotes):
+        print key,"\t",best_quotes[key]
 # compare_total_distinctiveness_pairwise()
-# compare_test_distinctiveness('../Memfiles/Advertising.dat')
+# compare_test_distinctiveness('../Memfiles/Political.dat')
+
 # LM = BrownLanguageModel(rebuild=True)
 # LM.load_doc_freqs(rebuild=True)
 

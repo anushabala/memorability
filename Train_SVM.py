@@ -17,7 +17,7 @@ def cross_validation():
     models = []
     accuracies = []
     for i in range(1,6):
-        y, x = svm_read_problem('create_datasets/fv_trainnoBOW%d.dat' % i)
+        y, x = svm_read_problem('create_datasets/fv_train%d.dat' % i)
         prob = svm_problem(y,x)
         param = svm_parameter()
         param.C = 1
@@ -25,7 +25,7 @@ def cross_validation():
         model = svm_train(prob, param)
         models.append(model)
 
-        y, x = svm_read_problem('create_datasets/fv_devnoBOW%d.dat' % i)
+        y, x = svm_read_problem('create_datasets/fv_dev%d.dat' % i)
         p_labels, p_acc, p_vals = svm_predict(y, x, model)
         accuracies.append(p_acc)
 
@@ -63,8 +63,8 @@ def get_f1(labels, path):
     print "F1 score: %f" %f1_score
 
 
-def cross_domain(feature_set, test_set):
-    y, x = svm_read_problem('create_datasets/fv%s_combined.dat' % feature_set)
+def cross_domain(root, feature_set, test_set):
+    y, x = svm_read_problem('%s/fv%s_combined.dat' % (root, feature_set))
     prob = svm_problem(y,x)
     param = svm_parameter()
     param.C = 2
@@ -74,11 +74,27 @@ def cross_domain(feature_set, test_set):
         param.kernel_type= kernel
         model = svm_train(prob, param)
         svm_save_model('model.dat', model)
-        y,x = svm_read_problem('create_datasets/fv%s_%s.dat' %(feature_set, test_set))
+        y,x = svm_read_problem('%s/fv%s_%s.dat' %(root, feature_set, test_set))
         p_labels, p_acc, p_vals = svm_predict(y, x, model)
         # if kernel==RBF:
-        get_f1(p_labels, 'create_datasets/fv%s_%s.dat' % (feature_set, test_set))
+        get_f1(p_labels, '%s/fv%s_%s.dat' % (root, feature_set, test_set))
+
+def simple_test(mode, fold_no):
+    y,x = svm_read_problem('create_datasets/fv_train%s%d.dat' % (mode,fold_no))
+    prob = svm_problem(y,x)
+    param = svm_parameter()
+    param.C = 2
+    kerneltypes = [LINEAR,RBF, SIGMOID]
+    for kernel in kerneltypes:
+        param.kernel_type= kernel
+        model = svm_train(prob, param)
+        svm_save_model('model.dat', model)
+        y,x = svm_read_problem('create_datasets/fv_dev%s%d.dat'  % (mode,fold_no))
+        p_labels, p_acc, p_vals = svm_predict(y, x, model)
+        # if kernel==RBF:
+        get_f1(p_labels, 'create_datasets/fv_dev%s%d.dat' % (mode,fold_no))
 #
 # cross_validation()
-cross_domain('_baseline', 'Political')
+cross_domain('Regenerated_data','_noNgrams', 'Political')
 # libsvm_cv()
+# simple_test('',1)
